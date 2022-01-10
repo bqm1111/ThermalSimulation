@@ -1,0 +1,85 @@
+Checking whether the CUDA compiler is NVIDIA using "" did not match "nvcc: NVIDIA \(R\) Cuda compiler driver":
+Checking whether the CUDA compiler is Clang using "" did not match "(clang version)":
+Compiling the CUDA compiler identification source file "CMakeCUDACompilerId.cu" failed.
+Compiler: CMAKE_CUDA_COMPILER-NOTFOUND 
+Build flags: 
+Id flags:  -v
+
+The output was:
+No such file or directory
+
+
+Compiling the CUDA compiler identification source file "CMakeCUDACompilerId.cu" failed.
+Compiler: CMAKE_CUDA_COMPILER-NOTFOUND 
+Build flags: 
+Id flags:  -v
+
+The output was:
+No such file or directory
+
+
+Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: /home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_06fd6/fast && /usr/bin/make  -f CMakeFiles/cmTC_06fd6.dir/build.make CMakeFiles/cmTC_06fd6.dir/build
+make[1]: Entering directory '/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_06fd6.dir/src.cxx.o
+/usr/bin/g++ -DCMAKE_HAVE_LIBC_PTHREAD  -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED  -o CMakeFiles/cmTC_06fd6.dir/src.cxx.o -c /home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTC_06fd6
+/home/martin/Downloads/cmake-3.21.1-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_06fd6.dir/link.txt --verbose=1
+/usr/bin/g++  -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED  CMakeFiles/cmTC_06fd6.dir/src.cxx.o -o cmTC_06fd6 
+CMakeFiles/cmTC_06fd6.dir/src.cxx.o: In function `main':
+src.cxx:(.text.startup+0x23): undefined reference to `pthread_create'
+src.cxx:(.text.startup+0x2c): undefined reference to `pthread_detach'
+src.cxx:(.text.startup+0x35): undefined reference to `pthread_cancel'
+src.cxx:(.text.startup+0x40): undefined reference to `pthread_join'
+src.cxx:(.text.startup+0x4b): undefined reference to `pthread_atfork'
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_06fd6.dir/build.make:98: recipe for target 'cmTC_06fd6' failed
+make[1]: *** [cmTC_06fd6] Error 1
+make[1]: Leaving directory '/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp'
+Makefile:127: recipe for target 'cmTC_06fd6/fast' failed
+make: *** [cmTC_06fd6/fast] Error 2
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_01ca8/fast && /usr/bin/make  -f CMakeFiles/cmTC_01ca8.dir/build.make CMakeFiles/cmTC_01ca8.dir/build
+make[1]: Entering directory '/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_01ca8.dir/CheckFunctionExists.cxx.o
+/usr/bin/g++   -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_01ca8.dir/CheckFunctionExists.cxx.o -c /home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_01ca8
+/home/martin/Downloads/cmake-3.21.1-linux-x86_64/bin/cmake -E cmake_link_script CMakeFiles/cmTC_01ca8.dir/link.txt --verbose=1
+/usr/bin/g++  -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED -DCHECK_FUNCTION_EXISTS=pthread_create CMakeFiles/cmTC_01ca8.dir/CheckFunctionExists.cxx.o -o cmTC_01ca8  -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_01ca8.dir/build.make:98: recipe for target 'cmTC_01ca8' failed
+make[1]: *** [cmTC_01ca8] Error 1
+make[1]: Leaving directory '/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/CMakeTmp'
+Makefile:127: recipe for target 'cmTC_01ca8/fast' failed
+make: *** [cmTC_01ca8/fast] Error 2
+
+
+

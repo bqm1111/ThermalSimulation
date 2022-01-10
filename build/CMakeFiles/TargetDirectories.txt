@@ -1,0 +1,3 @@
+/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/rebuild_cache.dir
+/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/edit_cache.dir
+/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles/ThermalSimulation.dir
