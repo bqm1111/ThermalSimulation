@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/ThermalSimulation.dir/Simulator.cpp.o"
   "CMakeFiles/ThermalSimulation.dir/Simulator.cpp.o.d"
+  "CMakeFiles/ThermalSimulation.dir/buffer.cpp.o"
+  "CMakeFiles/ThermalSimulation.dir/buffer.cpp.o.d"
   "CMakeFiles/ThermalSimulation.dir/main.cpp.o"
   "CMakeFiles/ThermalSimulation.dir/main.cpp.o.d"
   "CMakeFiles/ThermalSimulation.dir/utils.cpp.o"

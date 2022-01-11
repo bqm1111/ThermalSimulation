@@ -1,6 +1,6 @@
 #include "utils.h"
 
-void getRotationMatrix(float* matrix, RotationAngle angle)
+void getRi2bMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = cos(angle.pitch) * cos(angle.yaw);
     matrix[1] = sin(angle.roll) * sin(angle.pitch) * cos(angle.yaw) -
@@ -17,7 +17,34 @@ void getRotationMatrix(float* matrix, RotationAngle angle)
     matrix[8] = cos(angle.roll) * cos(angle.pitch);
 }
 
+void getLdoniMatrix(float* matrix, RotationAngle angle)
+{
+    matrix[0] = -sin(angle.yaw);
+    matrix[1] = sin(angle.pitch) * cos(angle.yaw);
+    matrix[2] = cos(angle.pitch) * cos(angle.yaw);
+    matrix[3] = cos(angle.yaw);
+    matrix[4] = sin(angle.pitch) * sin(angle.yaw);
+    matrix[5] = cos(angle.pitch) * sin(angle.yaw);
+    matrix[6] = 0;
+    matrix[7] = cos(angle.pitch);
+    matrix[8] =-sin(angle.pitch);
+}
 
+void getMMatrix(float* matrix, GPS gps)
+{
+    float lambda = gps.latitude / 180.0 * M_PI;
+    float phi = gps.longtitude / 180.0 * M_PI;
+
+    matrix[0] = -cos(phi) * sin(lambda);;
+    matrix[1] = -sin(lambda) * sin(phi);
+    matrix[2] = cos(lambda);
+    matrix[3] = -sin(phi);
+    matrix[4] = cos(phi);
+    matrix[5] = 0;
+    matrix[6] = -cos(lambda) * cos(phi);
+    matrix[7] = -cos(lambda) * sin(phi);
+    matrix[8] = -sin(lambda);
+}
 GPS ECEF2Geoditic(Coordinate pos)
 {
     GPS result;
@@ -62,4 +89,13 @@ Coordinate Geoditic2ECEF(GPS gps)
     result.y = (gps.height + N) * cos(lambda) * sin(phi);
     result.z = (gps.height + (1 - e_sq) * N) * sin(lambda);
     return result;
+}
+
+float deg2rad(float deg)
+{
+    return deg * M_PI / 180.0;
+}
+float rad2deg(float rad)
+{
+    return rad * 180.0 / M_PI;
 }

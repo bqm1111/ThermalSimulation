@@ -83,10 +83,24 @@ CMakeFiles/ThermalSimulation.dir/Simulator.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ThermalSimulation.dir/Simulator.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/martin/minhbq6/seeker/ThermalSimulation/Simulator.cpp -o CMakeFiles/ThermalSimulation.dir/Simulator.cpp.s
 
+CMakeFiles/ThermalSimulation.dir/buffer.cpp.o: CMakeFiles/ThermalSimulation.dir/flags.make
+CMakeFiles/ThermalSimulation.dir/buffer.cpp.o: ../buffer.cpp
+CMakeFiles/ThermalSimulation.dir/buffer.cpp.o: CMakeFiles/ThermalSimulation.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ThermalSimulation.dir/buffer.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThermalSimulation.dir/buffer.cpp.o -MF CMakeFiles/ThermalSimulation.dir/buffer.cpp.o.d -o CMakeFiles/ThermalSimulation.dir/buffer.cpp.o -c /home/martin/minhbq6/seeker/ThermalSimulation/buffer.cpp
+
+CMakeFiles/ThermalSimulation.dir/buffer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/ThermalSimulation.dir/buffer.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/martin/minhbq6/seeker/ThermalSimulation/buffer.cpp > CMakeFiles/ThermalSimulation.dir/buffer.cpp.i
+
+CMakeFiles/ThermalSimulation.dir/buffer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ThermalSimulation.dir/buffer.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/martin/minhbq6/seeker/ThermalSimulation/buffer.cpp -o CMakeFiles/ThermalSimulation.dir/buffer.cpp.s
+
 CMakeFiles/ThermalSimulation.dir/main.cpp.o: CMakeFiles/ThermalSimulation.dir/flags.make
 CMakeFiles/ThermalSimulation.dir/main.cpp.o: ../main.cpp
 CMakeFiles/ThermalSimulation.dir/main.cpp.o: CMakeFiles/ThermalSimulation.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/ThermalSimulation.dir/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ThermalSimulation.dir/main.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThermalSimulation.dir/main.cpp.o -MF CMakeFiles/ThermalSimulation.dir/main.cpp.o.d -o CMakeFiles/ThermalSimulation.dir/main.cpp.o -c /home/martin/minhbq6/seeker/ThermalSimulation/main.cpp
 
 CMakeFiles/ThermalSimulation.dir/main.cpp.i: cmake_force
@@ -100,7 +114,7 @@ CMakeFiles/ThermalSimulation.dir/main.cpp.s: cmake_force
 CMakeFiles/ThermalSimulation.dir/utils.cpp.o: CMakeFiles/ThermalSimulation.dir/flags.make
 CMakeFiles/ThermalSimulation.dir/utils.cpp.o: ../utils.cpp
 CMakeFiles/ThermalSimulation.dir/utils.cpp.o: CMakeFiles/ThermalSimulation.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/ThermalSimulation.dir/utils.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/ThermalSimulation.dir/utils.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/ThermalSimulation.dir/utils.cpp.o -MF CMakeFiles/ThermalSimulation.dir/utils.cpp.o.d -o CMakeFiles/ThermalSimulation.dir/utils.cpp.o -c /home/martin/minhbq6/seeker/ThermalSimulation/utils.cpp
 
 CMakeFiles/ThermalSimulation.dir/utils.cpp.i: cmake_force
@@ -114,6 +128,7 @@ CMakeFiles/ThermalSimulation.dir/utils.cpp.s: cmake_force
 # Object files for target ThermalSimulation
 ThermalSimulation_OBJECTS = \
 "CMakeFiles/ThermalSimulation.dir/Simulator.cpp.o" \
+"CMakeFiles/ThermalSimulation.dir/buffer.cpp.o" \
 "CMakeFiles/ThermalSimulation.dir/main.cpp.o" \
 "CMakeFiles/ThermalSimulation.dir/utils.cpp.o"
 
@@ -121,6 +136,7 @@ ThermalSimulation_OBJECTS = \
 ThermalSimulation_EXTERNAL_OBJECTS =
 
 ThermalSimulation: CMakeFiles/ThermalSimulation.dir/Simulator.cpp.o
+ThermalSimulation: CMakeFiles/ThermalSimulation.dir/buffer.cpp.o
 ThermalSimulation: CMakeFiles/ThermalSimulation.dir/main.cpp.o
 ThermalSimulation: CMakeFiles/ThermalSimulation.dir/utils.cpp.o
 ThermalSimulation: CMakeFiles/ThermalSimulation.dir/build.make
@@ -187,7 +203,7 @@ ThermalSimulation: /usr/local/lib/libopencv_imgproc.so.3.4.1
 ThermalSimulation: /usr/local/lib/libopencv_core.so.3.4.1
 ThermalSimulation: /usr/local/lib/libopencv_cudev.so.3.4.1
 ThermalSimulation: CMakeFiles/ThermalSimulation.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable ThermalSimulation"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/martin/minhbq6/seeker/ThermalSimulation/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable ThermalSimulation"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ThermalSimulation.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

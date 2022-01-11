@@ -96,6 +96,12 @@
 		<Unit filename="/home/martin/minhbq6/seeker/ThermalSimulation/Simulator.h">
 			<Option target="ThermalSimulation"/>
 		</Unit>
+		<Unit filename="/home/martin/minhbq6/seeker/ThermalSimulation/buffer.cpp">
+			<Option target="ThermalSimulation"/>
+		</Unit>
+		<Unit filename="/home/martin/minhbq6/seeker/ThermalSimulation/buffer.h">
+			<Option target="ThermalSimulation"/>
+		</Unit>
 		<Unit filename="/home/martin/minhbq6/seeker/ThermalSimulation/main.cpp">
 			<Option target="ThermalSimulation"/>
 		</Unit>

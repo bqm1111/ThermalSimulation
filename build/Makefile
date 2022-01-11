@@ -153,6 +153,30 @@ Simulator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/Simulator.cpp.s
 .PHONY : Simulator.cpp.s
 
+buffer.o: buffer.cpp.o
+.PHONY : buffer.o
+
+# target to build an object file
+buffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/buffer.cpp.o
+.PHONY : buffer.cpp.o
+
+buffer.i: buffer.cpp.i
+.PHONY : buffer.i
+
+# target to preprocess a source file
+buffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/buffer.cpp.i
+.PHONY : buffer.cpp.i
+
+buffer.s: buffer.cpp.s
+.PHONY : buffer.s
+
+# target to generate assembly for a file
+buffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/buffer.cpp.s
+.PHONY : buffer.cpp.s
+
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -213,6 +237,9 @@ help:
 	@echo "... Simulator.o"
 	@echo "... Simulator.i"
 	@echo "... Simulator.s"
+	@echo "... buffer.o"
+	@echo "... buffer.i"
+	@echo "... buffer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

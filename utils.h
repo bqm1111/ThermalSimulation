@@ -5,7 +5,11 @@
 #include "common.h"
 #include "math.h"
 
-void getRotationMatrix(float* matrix, RotationAngle angle);
+void getRi2bMatrix(float* matrix, RotationAngle angle);
+void getLdoniMatrix(float* matrix, RotationAngle angle);
+void getMMatrix(float* matrix, GPS gps);
 GPS ECEF2Geoditic(Coordinate pos);
 Coordinate Geoditic2ECEF(GPS gps);
+float deg2rad(float deg);
+float rad2deg(float rad);
 #endif
