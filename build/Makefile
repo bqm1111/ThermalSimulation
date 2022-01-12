@@ -153,6 +153,30 @@ Simulator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/Simulator.cpp.s
 .PHONY : Simulator.cpp.s
 
+Simulator.o: Simulator.cu.o
+.PHONY : Simulator.o
+
+# target to build an object file
+Simulator.cu.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/Simulator.cu.o
+.PHONY : Simulator.cu.o
+
+Simulator.i: Simulator.cu.i
+.PHONY : Simulator.i
+
+# target to preprocess a source file
+Simulator.cu.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/Simulator.cu.i
+.PHONY : Simulator.cu.i
+
+Simulator.s: Simulator.cu.s
+.PHONY : Simulator.s
+
+# target to generate assembly for a file
+Simulator.cu.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ThermalSimulation.dir/build.make CMakeFiles/ThermalSimulation.dir/Simulator.cu.s
+.PHONY : Simulator.cu.s
+
 buffer.o: buffer.cpp.o
 .PHONY : buffer.o
 
@@ -234,6 +258,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... ThermalSimulation"
+	@echo "... Simulator.o"
+	@echo "... Simulator.i"
+	@echo "... Simulator.s"
 	@echo "... Simulator.o"
 	@echo "... Simulator.i"
 	@echo "... Simulator.s"

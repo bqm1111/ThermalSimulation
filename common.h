@@ -2,6 +2,7 @@
 #define COMMON_H
 #include <iostream>
 #include <vector_types.h>
+#include <math.h>
 enum DataType
 {
     UCHAR,
@@ -37,6 +38,14 @@ struct Coordinate
         y = y_;
         z = z_;
     }
+    float norm()
+    {
+        return std::sqrt(x * x + y * y + z * z);
+    }
+    Coordinate operator -(const Coordinate & coor)
+    {
+        return Coordinate(x - coor.x, y - coor.y, z - coor.z);
+    }
     float x;
     float y;
     float z;
@@ -56,7 +65,6 @@ struct RayInfo
 
 struct SeekerInfo
 {
-    float fov;
     float azimuth;
     float elevation;
 };
@@ -73,6 +81,9 @@ struct ShipInfo
     // gps and imgPos is calculated in simulation time
     GPS *gps;               // gps data of each vertex
     uint2 *imgPos;          // pixel position of each vertex when projecting onto the image
+
+    float length;      // length of the ship
+    float height;      // height of the ship
 };
 
 #endif

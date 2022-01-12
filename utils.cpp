@@ -17,7 +17,7 @@ void getRi2bMatrix(float* matrix, RotationAngle angle)
     matrix[8] = cos(angle.roll) * cos(angle.pitch);
 }
 
-void getLdoniMatrix(float* matrix, RotationAngle angle)
+void getRb2cMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = -sin(angle.yaw);
     matrix[1] = sin(angle.pitch) * cos(angle.yaw);
@@ -30,7 +30,7 @@ void getLdoniMatrix(float* matrix, RotationAngle angle)
     matrix[8] =-sin(angle.pitch);
 }
 
-void getMMatrix(float* matrix, GPS gps)
+void getRe2iMatrix(float* matrix, GPS gps)
 {
     float lambda = gps.latitude / 180.0 * M_PI;
     float phi = gps.longtitude / 180.0 * M_PI;
