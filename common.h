@@ -80,7 +80,7 @@ struct ShipInfo
     float3 *vertices;       // num_vertices * sizeof(float3) bytes allocated
     // gps and imgPos is calculated in simulation time
     GPS *gps;               // gps data of each vertex
-    uint2 *imgPos;          // pixel position of each vertex when projecting onto the image
+    float2 *imgPos;          // pixel position of each vertex when projecting onto the image
 
     float length;      // length of the ship
     float height;      // height of the ship

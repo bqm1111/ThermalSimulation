@@ -27,9 +27,10 @@ private:
     int m_fps;
     int m_duration;
     void convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &target);
-    uint2 imageModel(ObjStatus missile, GPS target_gps);
+    float2 imageModel(ObjStatus missile, GPS target_gps);
     void calcTranformationMatrices();
     RayInfo calcDistance(ObjStatus missile, uint2 particlePix);
+    void gpuCalcDistanceToFace();
     bool isShipAppear();
 
     // thermal parameter

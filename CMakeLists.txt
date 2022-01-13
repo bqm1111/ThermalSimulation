@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda-10.2/bin/nvcc)
+execute_process(
+    COMMAND bash "-c" "which nvcc" OUTPUT_VARIABLE CMAKE_CUDA_COMPILER)
 project(ThermalSimulation LANGUAGES CXX CUDA)
 enable_language(CUDA)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED")

@@ -38,7 +38,7 @@ void Simulator::loadData()
 
 void Simulator::init()
 {
-    int grid_size = m_ship.num_surfaces * m_batch_size * m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE;
+    int grid_size = m_ship.num_surfaces * m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE;
 
     gpuErrChk(cudaMalloc((void**)&m_distanceToFace, grid_size * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_InorOut, grid_size * sizeof(bool)));
@@ -73,9 +73,9 @@ void Simulator::convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &ta
     }
 }
 
-uint2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
+float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
 {
-    uint2 result;
+    float2 result;
     Coordinate target_pos = Geoditic2ECEF(target_gps);
     Coordinate missile_pos = Geoditic2ECEF(missile.gps);
     float distance = std::sqrt((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
@@ -106,7 +106,7 @@ bool Simulator::isShipAppear()
 {
     ObjStatus missile = m_missile[m_current_img_id];
     ObjStatus target = m_target[m_current_img_id];
-    uint2 target_imgPos = imageModel(missile, target.gps);
+    float2 target_imgPos = imageModel(missile, target.gps);
     Coordinate target_pos = Geoditic2ECEF(target.gps);
     Coordinate missile_pos = Geoditic2ECEF(missile.gps);
 
@@ -197,15 +197,11 @@ void Simulator::run()
 {
     for(int i = 0; i < m_fps * m_duration; i++)
     {
-        for(int y = 0; y < m_height / m_batch_size; y++)
+        for(int idx = 0; idx < m_width * m_height / m_batch_size; idx++)
         {
-            for(int x = 0; x < m_width / m_batch_size; x++)
-            {
 
-            }
         }
         m_current_img_id++;
 
     }
 }
-
