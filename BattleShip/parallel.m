@@ -1,0 +1,663 @@
+
+ocean = 4.5468;
+path  = 40.0641;
+sky   = 1.0555;
+solar = 27.7758;
+object = 8.5245;
+
+lat = missile.lat;
+lon = missile.lon;
+h = missile.h;
+roll = missile.roll;
+pitch = missile.pitch;
+yaw = missile.yaw;
+
+lat0 = target.lat;
+lon0 = target.lon;
+h0 = target.h;
+roll0 = target.roll;
+pitch0 = target.pitch;
+yaw0 = target.yaw;
+
+azimuth = seeker.az;
+elevator = seeker.el;
+fov = seeker.fov;
+f = 320/tan(deg2rad(fov/2));
+[u0,w0]  = imageModel(lat,lon,h,lat0,lon0,h0,roll,pitch,yaw,azimuth,elevator,fov);
+[ x0, y0, z0 ] = Geoditic2ECEF( lat0, lon0, h0 );
+[ x, y, z ] = Geoditic2ECEF( lat, lon, h );
+distance0 = norm([x-x0,y-y0,z-z0]);
+
+L = (max(Data.vertices(:,1))-min(Data.vertices(:,1)))/2;
+if round(L) < L
+    L = round(L) + 1;
+else
+    L = round(L);
+end
+
+height = (max(Data.vertices(:,2))-min(Data.vertices(:,2)))/2;
+if round(height) < height
+    height = round(height) + 1;
+else
+    height = round(height);
+end
+
+delta_az = asin(u0/norm([u0 320/tan(deg2rad(fov/2))]));
+delta_el = asin(w0/norm([u0 w0 320/tan(deg2rad(fov/2))]));
+
+delta_u0 = atan(L/distance0)*320/tan(deg2rad(fov/2));
+delta_w0 = atan(height/distance0)*320/tan(deg2rad(fov/2));
+
+ImageMatrix = zeros(480,640);
+if (abs(delta_az) < deg2rad(fov/2)+atan(15/distance0)) && (abs(delta_el) < deg2rad(3/4*fov/2)+atan(6/distance0))
+    [Data] = convert2image (Data,lat,lon,h,lat0,lon0,h0,roll,pitch,yaw,azimuth,elevator,roll0,pitch0,yaw0,fov);
+end
+
+% parfor index=0:99
+%     m = mod(index, num) - 4;
+%     n = floor(index / num) - 4;
+%     ifov_radiance = surfaceCross (Data,solar,sky,ocean,path,...
+%         object,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,...
+%         i+(m-0.5)/num-320-0.5,j+(n-0.5)/num-240-0.5);
+%     sum_radiance = [sum_radiance,ifov_radiance]; 
+% end
+
+for j = 1:480
+    for i = 1:640
+        tic;
+        count = 0;
+        if (abs(delta_az) < deg2rad(fov/2)+atan(15/distance0)) && (abs(delta_el) < deg2rad(3/4*fov/2)+atan(6/distance0))
+            if (u0-delta_u0)< i-320-0.5 && i-320-0.5 < (u0+delta_u0) && (w0-delta_w0) < j-240-0.5 && j-240-0.5 <(w0+delta_w0)
+                sum_radiance = [];
+                idx = 0;
+                num = 10;
+                parfor index=0:99
+                    m = mod(index, num) - 4;
+                    n = floor(index / num) - 4;
+                    ifov_radiance = surfaceCross (Data,solar,sky,ocean,path,...
+                        object,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,...
+                        i+(m-0.5)/num-320-0.5,j+(n-0.5)/num-240-0.5);
+                    sum_radiance = [sum_radiance,ifov_radiance]; 
+                end
+                
+%                 parfor n = -4:1:5
+%                     for m = -4:1:5
+%                         ifov_radiance = surfaceCross (Data,solar,sky,ocean,path,object,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i+(m-0.5)/10-320-0.5,j+(n-0.5)/10-240-0.5);
+%                         idx = idx + 1;
+%                         sum_radiance = [sum_radiance,ifov_radiance];
+%                     end
+%                 end
+                radiance = sum(sum_radiance);
+            else
+                radiance = iFovRadiance(solar,ocean,sky,path,roll,pitch,yaw,azimuth,elevator,0.9,i-320-0.5,j-240-0.5,fov,lat,lon,h);
+            end
+        else
+            radiance = iFovRadiance(solar,ocean,sky,path,roll,pitch,yaw,azimuth,elevator,0.9,i-320-0.5,j-240-0.5,fov,lat,lon,h);
+        end
+        ImageMatrix(j,i) = radiance*1e6*100/fov^2;
+        toc;
+    end
+end
+
+% out = 0.5*ImageMatrix;
+imshow(0.5*ImageMatrix);
+
+%%
+function [Data] = convert2image (Data,lat,lon,h,lat0,lon0,h0,roll,pitch,yaw,azimuth,elevator,roll0,pitch0,yaw0,fov)
+[ x, y, z ] = Geoditic2ECEF( lat0, lon0, h0 );
+
+data = Data.vertices;
+
+Ri2b0 =[cos(pitch0)*cos(yaw0) sin(roll0)*sin(pitch0)*cos(yaw0)-cos(roll0)*sin(yaw0) cos(roll0)*sin(pitch0)*cos(yaw0)+sin(roll0)*sin(yaw0);
+    cos(pitch0)*sin(yaw0) sin(roll0)*sin(pitch0)*sin(yaw0)+cos(roll0)*cos(yaw0) cos(roll0)*sin(pitch0)*sin(yaw0)-sin(roll0)*cos(yaw0);
+    -sin(pitch0)           sin(roll0)*cos(pitch0)                             cos(roll0)*cos(pitch0)];
+
+lambda = lat0 / 180.0 * pi;
+phi = lon0 / 180.0 * pi;
+sin_lambda = sin(lambda);
+cos_lambda = cos(lambda);
+sin_phi = sin(phi);
+cos_phi = cos(phi);
+
+M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+    -sin_phi              cos_phi               0;
+    -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+
+for i = 1:length(data)
+    NED = M'*Ri2b0 *[data(i,1);data(i,3);-data(i,2)];
+    
+    [ lat01, lon01, h01 ] = ECEF2Geoditic( x+NED(1,1), y+NED(2,1), z+NED(3,1) );
+    Data.GPS(i,:) = [lat01,lon01,h01];
+    [u,w]  = imageModel(lat,lon,h,lat01,lon01,h01,roll,pitch,yaw,azimuth,elevator,fov);
+    Data.imagePosition(i,:) = [u,w];
+end
+end
+
+% function out = func(Data, solar, sky, ocean, path, object, lat, lon, h, roll, ...
+%                     pitch, yaw, elevator, fov, u, w)
+%     ifov = fov/640;
+%     image = Data.imagePosition;
+%     surface = Data.faces;
+%     count_faces = 0;
+%     for i = 1:length(faces)
+%         vector = zeros(3,2);
+%         for j = 1:3
+%             vector(j, :) = image(surface(i,j), :);
+%         end
+%         if in2out(vector, u, v)
+%             count_faces = count_faces + 1;
+%         end
+%     end
+% end
+
+%%
+function [out] = surfaceCross (Data,solar,sky,ocean,path,object,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,u,w)
+ifov = fov/640;
+image = Data.imagePosition;
+surface = Data.faces;
+count_faces = 0;
+faces_data = zeros(0,0);
+faces_idx = zeros(0,0);
+distance0 = zeros(0,0);
+beta0 = zeros(0,0);
+for i = 1:length(surface)
+    vector = zeros(3,2);
+    for j = 1:3
+        vector(j,:) = image(surface(i,j),:);
+    end
+    if in2out (vector,u,w)
+        count_faces = count_faces + 1;
+        faces_data(count_faces,1:3) = surface(i,1:3);
+        faces_idx(count_faces) = i;
+    end
+end
+
+if count_faces > 0
+    for i = 1:count_faces
+        [dis,bt] = distanceToface (Data,faces_data(i,:),lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,u,w);
+        distance0(i) = dis;
+        beta0(i) = bt;
+    end
+    [~,idx] = min(distance0);
+    beta = beta0(idx);
+    distance = distance0(idx);
+    
+    transmiss = Transmittance(distance);
+    e = 0.02 *(1-(1- cos(beta))^5);
+    solar_ifov = solar/pi * (1 - e) * transmiss * (deg2rad(ifov/20))^2;
+    ocean_ifov = ocean/pi * 0.9 *(1 - e) * transmiss * (deg2rad(ifov/20))^2;
+    sky_ifov = sky/pi * (1 - e) * transmiss * (deg2rad(ifov/20))^2;
+    object_ifov = object/pi * e * transmiss * (deg2rad(ifov/20))^2;
+    path_ifov = path/pi*(deg2rad(ifov/20))^2;
+    
+    sum_radiance = object_ifov + solar_ifov + ocean_ifov + sky_ifov + path_ifov;
+else
+    [distance,beta] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,u,w);
+    if distance > -1
+        transmiss = Transmittance(distance);
+        e = 0.9 *(1-(1- cos(beta))^5);
+        solar_ifov = solar/pi * (1 - e) * transmiss * (deg2rad(ifov/20))^2;
+        ocean_ifov = ocean/pi * e  * transmiss * (deg2rad(ifov/20))^2;
+        sky_ifov = sky/pi * (1 - e ) * transmiss * (deg2rad(ifov/20))^2;
+        path_ifov = path/pi*(deg2rad(ifov/20))^2*(1-exp(-0.25*distance/1000));
+        
+        sum_radiance =  solar_ifov + ocean_ifov + sky_ifov + path_ifov;
+    else
+        sum_radiance =  sky/pi*(deg2rad(ifov/20))^2 + path/pi*(deg2rad(ifov/20))^2;
+    end
+end
+out = sum(sum(sum_radiance));
+end
+
+function in = in2out (Data,u,w)
+sum = 0;
+for i = 1:length(Data)
+    if i == length(Data)
+        vecto1 = -[u,w] + Data(i,:);
+        vecto2 = -[u,w] + Data(1,:);
+        
+    else
+        vecto1 = -[u,w] + Data(i,:);
+        vecto2 = -[u,w] + Data(i+1,:);
+    end
+    cos_phi = vecto1*vecto2'/norm(vecto1)/norm(vecto2);
+    if abs(cos_phi) > 1
+        cos_phi = cos_phi/abs(cos_phi);
+    end
+    sum = sum + acos(cos_phi);
+end
+if sum >= 2*pi-0.001
+    in = 1;
+else
+    in = 0;
+end
+end
+
+function [distance,beta] = distanceToface (Data,faces,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,u,w)
+
+if min(size(faces)) == 0
+    distance = -1;
+    beta = inf;
+    fprintf('Error in run');
+    return;
+end
+
+f = 320/tan(deg2rad(fov/2));
+Ldonic = [u;w;f]/norm([u;w;f]);
+Ldoni = [-sin(azimuth) sin(elevator)*cos(azimuth) cos(elevator)*cos(azimuth);
+    cos(azimuth) sin(elevator)*sin(azimuth) cos(elevator)*sin(azimuth);
+    0          cos(elevator)              -sin(elevator)];
+Ri2b = [cos(pitch)*cos(yaw) sin(roll)*sin(pitch)*cos(yaw)-cos(roll)*sin(yaw) cos(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw);
+    cos(pitch)*sin(yaw) sin(roll)*sin(pitch)*sin(yaw)+cos(roll)*cos(yaw) cos(roll)*sin(pitch)*sin(yaw)-sin(roll)*cos(yaw);
+    -sin(pitch)          sin(roll)*cos(pitch)                             cos(roll)*cos(pitch)];
+
+lambda = lat / 180.0 * pi;
+phi = lon / 180.0 * pi;
+
+sin_lambda = sin(lambda);
+cos_lambda = cos(lambda);
+sin_phi = sin(phi);
+cos_phi = cos(phi);
+
+M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+    -sin_phi              cos_phi               0;
+    -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+NED = M'*Ri2b*Ldoni*Ldonic;
+
+[ x, y, z ] = Geoditic2ECEF( lat, lon, h );
+
+lat1 = Data.GPS(faces(1,1),1);
+lon1 = Data.GPS(faces(1,1),2);
+h1 = Data.GPS(faces(1,1),3);
+[ x1, y1, z1 ] = Geoditic2ECEF( lat1, lon1, h1 );
+
+lat2 = Data.GPS(faces(1,2),1);
+lon2 = Data.GPS(faces(1,2),2);
+h2 = Data.GPS(faces(1,2),3);
+
+lat3 = Data.GPS(faces(1,3),1);
+lon3 = Data.GPS(faces(1,3),2);
+h3 = Data.GPS(faces(1,3),3);
+
+vector1  = vectorCalculator (lat1,lon1,h1,lat2,lon2,h2);
+vector2  = vectorCalculator (lat2,lon2,h2,lat3,lon3,h3);
+n = cross(vector1,vector2);
+d = - [x1,y1,z1]*n;
+if (d+[x,y,z]*n) == 0
+    [distance,beta] = averageDistance (Data,faces,lat,lon,h,NED);
+else
+    distance = norm(NED)/abs(NED'*n)*abs((d+[x,y,z]*n));
+    beta = acos(abs(NED'*n)/norm(NED)/norm(n));
+end
+end
+
+function [distance,beta] = averageDistance (Data,faces,lat,lon,h,NED)
+[ x, y, z ] = Geoditic2ECEF( lat, lon, h );
+count = 0;
+range = zeros(0,0);
+for i = 2:4
+    if i==4
+        vector1 = Data.imagePosition(faces(1,i-1),:)-[u,w];
+        vector2 = Data.imagePosition(faces(1,1),:)-[u,w];
+        if norm(vector1)==0 || norm(vector2)==0
+            if norm(vector1)==0
+                count = count + 1;
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,i-1),1),Data.GPS(faces(1,i-1),2),Data.GPS(faces(1,i-1),3) );
+                range(count) = norm([x1-x,y1-y,z1-z]);
+            end
+            if norm(vector2)==0
+                count = count + 1;
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,1),1),Data.GPS(faces(1,1),2),Data.GPS(faces(1,1),3) );
+                range(count) = norm([x1-x,y1-y,z1-z]);
+            end
+        else
+            if (vector1*vector2'/norm(vector1)/norm(vector2)) < 0
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,i-1),1),Data.GPS(faces(1,i-1),2),Data.GPS(faces(1,i-1),3) );
+                [ x2, y2, z2 ] = Geoditic2ECEF( Data.GPS(faces(1,1),1),Data.GPS(faces(1,1),2),Data.GPS(faces(1,1),3) );
+                NED1 = [x1-x2;y1-y2;z1-z2]/norm([x1-x2;y1-y2;z1-z2]);
+                A = [NED,-NED1];
+                B = [x1;y1;z1]-[x;y;z];
+                t = pinv(A'*A)*A'*B;
+                count = count + 1;
+                range(count) = norm(NED*t(1,1));
+            end
+        end
+        break;
+    else
+        vector1 = Data.imagePosition(faces(1,i-1),:)-[u,w];
+        vector2 = Data.imagePosition(faces(1,i),:)-[u,w];
+        if norm(vector1)==0 || norm(vector2)==0
+            if norm(vector1)==0
+                count = count + 1;
+                
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,i-1),1),Data.GPS(faces(1,i-1),2),Data.GPS(faces(1,i-1),3) );
+                range(count) = norm([x1-x,y1-y,z1-z]);
+            end
+            if norm(vector2)==0
+                count = count + 1;
+                
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,i),1),Data.GPS(faces(1,i),2),Data.GPS(faces(1,i),3) );
+                range(count) = norm([x1-x,y1-y,z1-z]);
+            end
+        else
+            if (vector1*vector2'/norm(vector1)/norm(vector2)) < 0
+                [ x1, y1, z1 ] = Geoditic2ECEF( Data.GPS(faces(1,i-1),1),Data.GPS(faces(1,i-1),2),Data.GPS(faces(1,i-1),3) );
+                [ x2, y2, z2 ] = Geoditic2ECEF( Data.GPS(faces(1,i),1),Data.GPS(faces(1,i),2),Data.GPS(faces(1,i),3) );
+                NED1 = [x1-x2;y1-y2;z1-z2]/norm([x1-x2;y1-y2;z1-z2]);
+                A = [NED,-NED1];
+                B = [x1;y1;z1]-[x;y;z];
+                t = pinv(A'*A)*A'*B;
+                count = count + 1;
+                range(count) = norm(NED*t(1,1));
+            end
+        end
+    end
+end
+maximum = max(range);
+[minimum,idx] = min(range);
+distance = minimum/2;
+range(idx) = maximum;
+minimum = min(range);
+distance = distance + minimum/2;
+beta = pi/2;
+end
+
+function NED = vectorCalculator (lat,lon,h,lat1,lon1,h1)
+
+[ x, y, z ] = Geoditic2ECEF( lat, lon, h );
+[ x1, y1, z1 ] = Geoditic2ECEF( lat1, lon1, h1 );
+
+NED = [x1-x;y1-y;z1-z]/norm([x1-x;y1-y;z1-z]);
+end
+
+%%
+function [radiance_ifov] = iFovRadiance(solar,ocean,sky,path,roll,pitch,yaw,azimuth,elevator,e,i_pixel,j_pixel,fov,lat,lon,h)
+ifov = fov/640;
+[distance,beta] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel);
+
+[distance1,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel+0.5,j_pixel+0.5);
+[distance2,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel+0.5,j_pixel-0.5);
+[distance3,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel-0.5,j_pixel+0.5);
+[distance4,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel-0.5,j_pixel-0.5);
+if (distance1 > -1 && distance2 > -1&&distance3 > -1 && distance4 >-1)
+    transmiss = Transmittance(distance);
+    solar_ifov = solar/pi * (1 - e *(1-(1- cos(beta))^5)) * transmiss * (deg2rad(ifov))^2;
+    ocean_ifov = ocean/pi * e *(1-(1- cos(beta))^5) * transmiss * (deg2rad(ifov))^2;
+    sky_ifov = sky/pi * (1 - e *(1-(1- cos(beta))^5)) * transmiss * (deg2rad(ifov))^2;
+    radiance_ifov = solar_ifov + ocean_ifov + sky_ifov + path/pi*(deg2rad(ifov))^2*(1-exp(-0.25*distance/1000));
+elseif (distance1 == -1 && distance2 == -1 && distance3 == -1 && distance4 == -1)
+    solar_ifov = 0;
+    ocean_ifov = 0;
+    sky_ifov = sky/pi*(deg2rad(ifov))^2;
+    radiance_ifov = solar_ifov + ocean_ifov + sky_ifov + path/pi*(deg2rad(ifov))^2;
+else
+    radiance_ifov = gaincalculator (solar,sky,ocean,path,ifov,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel);
+end
+
+end
+function [out] = gaincalculator (solar,sky,ocean,path,ifov,lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel)
+radiance_ifov = 0;
+for i = -0.475:0.05:0.475
+    for j = -0.475:0.05:0.475
+        u = i_pixel + i;
+        w = j_pixel + j;
+        [distance,beta] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,u,w);
+        if distance > -1
+            transmiss = Transmittance(distance);
+            e = 0.9 *(1-(1- cos(beta))^5);
+            solar_ifov = solar/pi * (1 - e) * transmiss * (deg2rad(ifov/20))^2;
+            ocean_ifov = ocean/pi * e  * transmiss * (deg2rad(ifov/20))^2;
+            sky_ifov = sky/pi * (1 - e ) * transmiss * (deg2rad(ifov/20))^2;
+            path_ifov = path/pi*(deg2rad(ifov/20))^2*(1-exp(-0.25*distance/1000));
+            radiance_ifov = radiance_ifov + solar_ifov + ocean_ifov + sky_ifov + path_ifov;
+        else
+            radiance_ifov = radiance_ifov + sky/pi*(deg2rad(ifov/20))^2 + path/pi*(deg2rad(ifov/20))^2;
+        end
+    end
+end
+out = radiance_ifov;
+end
+
+% function [gain,distance] = gaincalculator ( lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel)
+% count = 0;
+% for i = -0.475:0.05:0.475
+%     for j = -0.475:0.05:0.475
+%         [distance,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel+i,j_pixel+j);
+%         if distance > -1
+%             count = count + 1;
+%         end
+%     end
+% end
+% gain = count/400;
+% [distance,~] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel-gain/2+0.5);
+% end
+
+function [d,beta] = Distance (lat,lon,h,roll,pitch,yaw,azimuth,elevator,fov,i_pixel,j_pixel)
+
+f = 640/2/tan(deg2rad(fov/2));
+u = i_pixel;
+w = j_pixel;
+
+Ldonic = [u w f]'/norm([u w f]);
+
+Ldoni = [-sin(azimuth) sin(elevator)*cos(azimuth) cos(elevator)*cos(azimuth);
+    cos(azimuth) sin(elevator)*sin(azimuth) cos(elevator)*sin(azimuth);
+    0          cos(elevator)              -sin(elevator)];
+Ri2b = [cos(pitch)*cos(yaw) sin(roll)*sin(pitch)*cos(yaw)-cos(roll)*sin(yaw) cos(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw);
+    cos(pitch)*sin(yaw) sin(roll)*sin(pitch)*sin(yaw)+cos(roll)*cos(yaw) cos(roll)*sin(pitch)*sin(yaw)-sin(roll)*cos(yaw);
+    -sin(pitch)          sin(roll)*cos(pitch)                             cos(roll)*cos(pitch)];
+
+lambda = lat / 180.0 * pi;
+phi = lon / 180.0 * pi;
+
+sin_lambda = sin(lambda);
+cos_lambda = cos(lambda);
+sin_phi = sin(phi);
+cos_phi = cos(phi);
+
+M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+    -sin_phi              cos_phi               0;
+    -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+NED = M' * Ri2b * Ldoni * Ldonic;
+
+[ xA, yA, zA ] = Geoditic2ECEF( lat, lon, h );
+NED1 = [xA yA zA]'/norm([xA,yA,zA]);
+% fprintf('\n%f',NED'*NED1)
+L = norm([xA, yA, zA])*abs(NED'*NED1);
+[~,~,h0] = ECEF2Geoditic( xA+L*NED(1,1), yA+L*NED(2,1), zA+L*NED(3,1) );
+
+if h0 > 0
+    d = -1;
+    beta = -1;
+else
+    [d,beta] = calculator ( xA,yA,zA,NED,L,h,h0 );
+end
+end
+
+function [d,beta] = calculator ( xA,yA,zA,NED,L,h,h0 )
+loop = 0;
+while (abs(h0)>0.05 && loop < 2000)
+    L = L * h/(h-h0);
+    [~,~,h0] = ECEF2Geoditic( xA+L*NED(1,1), yA+L*NED(2,1), zA+L*NED(3,1) );
+    loop = loop + 1;
+end
+d = L;
+% fprintf('\n%f',h0)
+NED1 = [xA+L*NED(1,1), yA+L*NED(2,1), zA+L*NED(3,1)]'/norm([xA+L*NED(1,1), yA+L*NED(2,1), zA+L*NED(3,1)]);
+beta = acos(abs(NED'*NED1));
+end
+
+%%
+% function beta = angle(u,w,lat,lon,lat0,lon0,roll,pitch,yaw,azimuth,elevator,roll0,pitch0,yaw0,fov)
+% Ri2b0 =[cos(pitch0)*cos(yaw0) sin(roll0)*sin(pitch0)*cos(yaw0)-cos(roll0)*sin(yaw0) cos(roll0)*sin(pitch0)*cos(yaw0)+sin(roll0)*sin(yaw0);
+%     cos(pitch0)*sin(yaw0) sin(roll0)*sin(pitch0)*sin(yaw0)+cos(roll0)*cos(yaw0) cos(roll0)*sin(pitch0)*sin(yaw0)-sin(roll0)*cos(yaw0);
+%     -sin(pitch0)           sin(roll0)*cos(pitch0)                             cos(roll0)*cos(pitch0)];
+% lambda = lat0 / 180.0 * pi;
+% phi = lon0 / 180.0 * pi;
+%
+% sin_lambda = sin(lambda);
+% cos_lambda = cos(lambda);
+% sin_phi = sin(phi);
+% cos_phi = cos(phi);
+%
+% M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+%     -sin_phi              cos_phi               0;
+%     -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+%
+% n1 = M' * Ri2b0 * [0;1;0];
+%
+% lambda = lat / 180.0 * pi;
+% phi = lon / 180.0 * pi;
+%
+% sin_lambda = sin(lambda);
+% cos_lambda = cos(lambda);
+% sin_phi = sin(phi);
+% cos_phi = cos(phi);
+%
+% M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+%     -sin_phi              cos_phi               0;
+%     -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+%
+% Ldoni = [-sin(azimuth) sin(elevator)*cos(azimuth) cos(elevator)*cos(azimuth);
+%     cos(azimuth) sin(elevator)*sin(azimuth) cos(elevator)*sin(azimuth);
+%     0          cos(elevator)              -sin(elevator)];
+% Ri2b = [cos(pitch)*cos(yaw) sin(roll)*sin(pitch)*cos(yaw)-cos(roll)*sin(yaw) cos(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw);
+%     cos(pitch)*sin(yaw) sin(roll)*sin(pitch)*sin(yaw)+cos(roll)*cos(yaw) cos(roll)*sin(pitch)*sin(yaw)-sin(roll)*cos(yaw);
+%     -sin(pitch)          sin(roll)*cos(pitch)                             cos(roll)*cos(pitch)];
+% f =  320/tan(deg2rad(fov/2));
+% n2 = M' * Ri2b * Ldoni * [u;w;f]/norm([u;w;f]);
+%
+% beta = acos(abs(n1'*n2));
+% end
+
+% function out = inOrout (u,w,u1,w1,u2,w2,u3,w3,u4,w4,u5,w5,u6,w6,u7,w7,u8,w8)
+% n1 = [u1;w1]-[u;w];
+% n2 = [u2;w2]-[u;w];
+% n3 = [u3;w3]-[u;w];
+% n4 = [u4;w4]-[u;w];
+% n5 = [u5;w5]-[u;w];
+% n6 = [u6;w6]-[u;w];
+% n7 = [u7;w7]-[u;w];
+% n8 = [u8;w8]-[u;w];
+%
+% phi23 = phiacos (n2,n3);
+% phi34 = phiacos (n3,n4);
+% phi45 = phiacos (n4,n5);
+% phi52 = phiacos (n5,n2);
+%
+% phi16 = phiacos (n1,n6);
+% phi67 = phiacos (n6,n7);
+% phi78 = phiacos (n7,n8);
+% phi81 = phiacos (n8,n1);
+%
+% if abs(phi23+phi34+phi45+phi52-2*pi)<0.02 || abs(phi16+phi67+phi78+phi81-2*pi)<0.02
+%     out = 1;
+% else
+%     out = 0;
+% end
+% end
+%
+% function phi = phiacos (n1,n2)
+% gain = n1'*n2/norm(n1)/norm(n2);
+% if abs(gain) > 1
+%     gain = gain/abs(gain);
+% end
+% phi = acos(gain);
+% if phi < 0
+%     phi = phi + pi;
+% end
+% end
+
+function [u,w]  = imageModel(lat,lon,h,lat0,lon0,h0,roll,pitch,yaw,azimuth,elevator,fov)
+
+[ x0, y0, z0 ] = Geoditic2ECEF( lat0, lon0, h0 );
+[ x, y, z ] = Geoditic2ECEF( lat, lon, h );
+
+distance = norm([x-x0,y-y0,z-z0]);
+NED = [x-x0,y-y0,z-z0]'/distance;
+
+Ldoni = [-sin(azimuth) sin(elevator)*cos(azimuth) cos(elevator)*cos(azimuth);
+    cos(azimuth) sin(elevator)*sin(azimuth) cos(elevator)*sin(azimuth);
+    0          cos(elevator)              -sin(elevator)];
+Ri2b = [cos(pitch)*cos(yaw) sin(roll)*sin(pitch)*cos(yaw)-cos(roll)*sin(yaw) cos(roll)*sin(pitch)*cos(yaw)+sin(roll)*sin(yaw);
+    cos(pitch)*sin(yaw) sin(roll)*sin(pitch)*sin(yaw)+cos(roll)*cos(yaw) cos(roll)*sin(pitch)*sin(yaw)-sin(roll)*cos(yaw);
+    -sin(pitch)          sin(roll)*cos(pitch)                             cos(roll)*cos(pitch)];
+
+lambda = lat / 180.0 * pi;
+phi = lon / 180.0 * pi;
+
+sin_lambda = sin(lambda);
+cos_lambda = cos(lambda);
+sin_phi = sin(phi);
+cos_phi = cos(phi);
+
+
+M = [-cos_phi * sin_lambda -sin_lambda * sin_phi cos_lambda;
+    -sin_phi              cos_phi               0;
+    -cos_lambda * cos_phi -cos_lambda * sin_phi -sin_lambda];
+
+Ldonic = Ldoni' * Ri2b' * M * NED;
+if Ldonic(3,1)< 0
+    Ldonic = -Ldonic;
+end
+f = 320/tan(deg2rad(fov/2));
+u = Ldonic(1,1)/Ldonic(3,1)*f;
+w = Ldonic(2,1)/Ldonic(3,1)*f;
+end
+
+function [ x, y, z ] = Geoditic2ECEF( lat0, lon0, h0 )
+%UNTITLED8 Summary of this function goes here
+%   Detailed explanation goes here
+% a = 6378137;
+% b = 6356752.314245;
+a = 6378137 ; b = 6356752;
+f = (a - b) / a;
+
+e_sq = f*(2-f);
+
+lambda = lat0 / 180.0 * pi;
+phi = lon0 / 180.0 * pi;
+
+sin_lambda = sin(lambda);
+cos_lambda = cos(lambda);
+sin_phi = sin(phi);
+cos_phi = cos(phi);
+
+N = a / sqrt(1 - e_sq * sin_lambda * sin_lambda);
+
+x = (h0 + N) * cos_lambda * cos_phi;
+y = (h0 + N) * cos_lambda * sin_phi;
+z = (h0 + (1 - e_sq) * N) * sin_lambda;
+
+end
+
+function [ lat, lon, h ] = ECEF2Geoditic( x, y, z )
+% a = 6378137;
+% b = 6356752.314245;
+a = 6378137 ; b = 6356752;
+f = (a - b) / a;
+
+e_sq = f*(2-f);
+
+eps = e_sq / (1.0 - e_sq);
+p = sqrt(x * x + y * y);
+q = atan2((z * a), (p * b));
+sin_q = sin(q);
+cos_q = cos(q);
+sin_q_3 = sin_q * sin_q * sin_q;
+cos_q_3 = cos_q * cos_q * cos_q;
+phi = atan2((z + eps * b * sin_q_3),(p - e_sq * a * cos_q_3));
+lambda = atan2(y, x);
+v = a / sqrt(1.0 - e_sq * sin(phi) * sin(phi));
+h = (p/cos(phi)) - v;
+lat = phi / pi * 180.0;
+lon = lambda / pi * 180.0;
+
+end
+
+function gain = Transmittance (distance)
+
+gain = exp(-0.26*distance/1000);
+
+end
+

@@ -29,6 +29,17 @@ Simulator::~Simulator()
     gpuErrChk(cudaFree(m_partialRadiance));
     gpuErrChk(cudaFree(m_radiance));
     gpuErrChk(cudaFree(m_renderedImg));
+
+    // free mem transformation matrices
+    gpuErrChk(cudaFree(m_Rb2c_cur));
+    gpuErrChk(cudaFree(m_Rb2c_prev));
+    gpuErrChk(cudaFree(m_Ri2b_missile_cur));
+    gpuErrChk(cudaFree(m_Ri2b_missile_prev));
+    gpuErrChk(cudaFree(m_Ri2b_target));
+    gpuErrChk(cudaFree(m_Re2i_missile));
+    gpuErrChk(cudaFree(m_Re2i_target));
+
+
 }
 
 void Simulator::loadData()
@@ -45,6 +56,15 @@ void Simulator::init()
     gpuErrChk(cudaMalloc((void**)&m_partialRadiance, grid_size * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_radiance, m_width * m_height * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_renderedImg, m_width * m_height * sizeof(unsigned char)));
+
+    // Allocate memory for transformation matrices
+    gpuErrChk(cudaMalloc((void**)&m_Rb2c_cur, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Rb2c_prev, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Ri2b_missile_cur, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Ri2b_missile_prev, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Ri2b_target, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Re2i_missile, 9 * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_Re2i_target, 9 * sizeof(float)));
 }
 //!
 //! \brief Simulator::convertToImage
@@ -136,13 +156,27 @@ void Simulator::calcTranformationMatrices()
         target_prev = m_target[m_current_img_id - 1];
         seeker_prev = m_seeker[m_current_img_id - 1];
     }
-    getRb2cMatrix(m_Rb2c_cur, RotationAngle(0, seeker_cur.elevation, seeker_cur.azimuth));
-    getRb2cMatrix(m_Rb2c_prev, RotationAngle(0, seeker_prev.elevation, seeker_prev.azimuth));
-    getRi2bMatrix(m_Ri2b_missile_cur, missile_cur.angle);
-    getRi2bMatrix(m_Ri2b_missile_prev, missile_prev.angle);
-    getRi2bMatrix(m_Ri2b_target, target_cur.angle);
-    getRe2iMatrix(m_Re2i_missile, missile_cur.gps);
-    getRe2iMatrix(m_Re2i_target, target_cur.gps);
+    cv::Mat temp(3, 3, CV_32FC1);
+    getRb2cMatrix((float*)temp.data, RotationAngle(0, seeker_cur.elevation, seeker_cur.azimuth));
+    gpuErrChk(cudaMemcpy(m_Rb2c_cur, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRb2cMatrix((float*)temp.data, RotationAngle(0, seeker_prev.elevation, seeker_prev.azimuth));
+    gpuErrChk(cudaMemcpy(m_Rb2c_prev, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRi2bMatrix((float*)temp.data, missile_cur.angle);
+    gpuErrChk(cudaMemcpy(m_Ri2b_missile_cur, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRi2bMatrix((float*)temp.data, missile_prev.angle);
+    gpuErrChk(cudaMemcpy(m_Ri2b_missile_prev, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRi2bMatrix((float*)temp.data, target_cur.angle);
+    gpuErrChk(cudaMemcpy(m_Ri2b_target, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRe2iMatrix((float*)temp.data, missile_cur.gps);
+    gpuErrChk(cudaMemcpy(m_Re2i_missile, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
+
+    getRe2iMatrix((float*)temp.data, target_cur.gps);
+    gpuErrChk(cudaMemcpy(m_Re2i_target, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
 }
 
 RayInfo Simulator::calcDistance(ObjStatus missile, uint2 particlePix)
@@ -202,6 +236,5 @@ void Simulator::run()
 
         }
         m_current_img_id++;
-
     }
 }

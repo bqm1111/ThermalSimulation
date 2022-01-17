@@ -12,4 +12,6 @@ GPS ECEF2Geoditic(Coordinate pos);
 Coordinate Geoditic2ECEF(GPS gps);
 float deg2rad(float deg);
 float rad2deg(float rad);
+std::vector<std::pair<std::string, std::vector<float>>> read_csv(std::string filename);
+bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine);
 #endif

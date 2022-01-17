@@ -39,9 +39,45 @@ __device__ bool isInsideObject(float2* data, int length_data, float2 imgPos)
         float cos_phi = inner_product(vector1, vector2) / norm(vector1) / norm(vector2);
         sum = sum + acosf(cos_phi);
     }
+
+    if(sum > 2 * M_PI - 0.001)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
-__global__ void cudaCalcDistanceToFace(int num_faces, int num_partialPix, int offset, int batch_size, int width, int height)
+__device__ float calcDistanceToFaceHelper()
+{
+
+}
+
+//__device__ Coordinate Geoditic2ECEF(GPS gps)
+//{
+//    Coordinate result;
+
+//    float a = 6378137;
+//    float b = 6356752;
+//    float f = (a - b) / a;
+//    float e_sq = f * (2 - f);
+
+//    float lambda = gps.latitude / 180 * M_PI;
+//    float phi = gps.longtitude / 180 * M_PI;
+
+//    float N = a / std::sqrt(1 - e_sq * sinf(lambda) * sinf(lambda));
+//    result.x = (gps.height + N) * cosf(lambda) * cosf(phi);
+//    result.y = (gps.height + N) * cosf(lambda) * sinf(phi);
+//    result.z = (gps.height + (1 - e_sq) * N) * sinf(lambda);
+
+//    return result;
+//}
+
+__global__ void cudaCalcDistanceToFace(float *distance,
+                                       int num_faces, int num_partialPix, int offset,
+                                       int batch_size, int width, int height)
 {
     int partialPixIdx = threadIdx.x + IMUL(blockIdx.x, blockDim.x);
     int faceIdx = threadIdx.y + IMUL(blockIdx.y, blockDim.y);
@@ -57,8 +93,15 @@ __global__ void cudaCalcDistanceToFace(int num_faces, int num_partialPix, int of
     {
         float u = col + (float)(partialPixIdx_X - 0.5)/ PIXEL_GRID_SIZE - width / 2 - 0.5;
         float w = row + (float)(partialPixIdx_Y - 0.5)/ PIXEL_GRID_SIZE - height / 2 - 0.5;
-    }
+//        if(isInsideObject())
+//        {
 
+//        }
+//        else
+//        {
+//            distance[resultIdx] = 0;
+//        }
+    }
 }
 
 

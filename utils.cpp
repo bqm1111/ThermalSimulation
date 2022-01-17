@@ -72,6 +72,7 @@ GPS ECEF2Geoditic(Coordinate pos)
 
     return result;
 }
+
 Coordinate Geoditic2ECEF(GPS gps)
 {
     Coordinate result;
@@ -95,7 +96,63 @@ float deg2rad(float deg)
 {
     return deg * M_PI / 180.0;
 }
+
 float rad2deg(float rad)
 {
     return rad * 180.0 / M_PI;
+}
+
+bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine)
+{
+    std::string line;
+    std::ifstream file(filename);
+    int idx = 0;
+
+    if(file.is_open())
+    {
+        while(getline(file, line))
+        {
+            idx++;
+        }
+        if(idx > numLine)
+        {
+            std::cout << "numline = " << numLine << " < " << idx << std::endl;
+            std::cerr << "Array not large enough to contain data in file" << std::endl;
+        }
+        file.close();
+    }
+    //
+    int lineIdx = 0;
+
+    file.open(filename);
+    if(file.is_open())
+    {
+        while(getline(file, line))
+        {
+            lineIdx++;
+            size_t pos = 0;
+            std::string delimeter = " ";
+            int cnt= 0;
+            while((pos = line.find(' ')) != std::string::npos)
+            {
+                cnt++;
+//                arr[numPerLine * lineIdx + cnt] = std::stof(line.substr(0, pos));
+                std::cout << line.substr(0, pos) << "\t";
+                line.erase(0, pos + delimeter.length());
+            }
+//            arr[numPerLine * lineIdx + cnt + 1] = std::stof(line);
+            std::cout << line << std::endl;
+        }
+
+        file.close();
+        std::cout << "Total line = " << lineIdx << std::endl;
+        return true;
+    }
+    else
+    {
+        std::cout << "Unable to open file " << filename << std::endl;
+        return false;
+    }
+
+    return true;
 }
