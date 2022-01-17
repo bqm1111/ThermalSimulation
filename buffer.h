@@ -1,6 +1,5 @@
 #ifndef BUFFER_H
 #define BUFFER_H
-#include "buffer.h"
 #include "common.h"
 #include "define.h"
 class GenericData

@@ -11,7 +11,7 @@
 class Simulator
 {
 public:
-    Simulator(int fps=100, int duration = 153, int batch_size = 32);
+    Simulator(int fps=30, int duration = 150, int batch_size = 32);
     ~Simulator();
 
     ObjStatus * m_missile;          // (fps * duration * sizeof(ObjStatus) bytes allocated
@@ -26,6 +26,7 @@ public:
 private:
     int m_fps;
     int m_duration;
+    int m_totalFrame;
     void convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &target);
     float2 imageModel(ObjStatus missile, GPS target_gps);
     void calcTranformationMatrices();
@@ -62,6 +63,13 @@ private:
     float * m_radiance;
     unsigned char * m_renderedImg;
     int m_batch_size;
+
+    // data file source
+    std::string m_missile_data_filename;
+    std::string m_target_data_filename;
+    std::string m_seeker_data_filename;
+    std::string m_ship_surfaces_data_filename;
+    std::string m_ship_vertices_data_filename;
 };
 
 #endif

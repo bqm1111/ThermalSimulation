@@ -15,6 +15,7 @@ __device__ float inner_product(float2 a, float2 b)
     return (a.x * b.x + a.y * b.y);
 }
 
+
 __device__ bool isInsideObject(float2* data, int length_data, float2 imgPos)
 {
     float sum = 0;
@@ -55,25 +56,6 @@ __device__ float calcDistanceToFaceHelper()
 
 }
 
-//__device__ Coordinate Geoditic2ECEF(GPS gps)
-//{
-//    Coordinate result;
-
-//    float a = 6378137;
-//    float b = 6356752;
-//    float f = (a - b) / a;
-//    float e_sq = f * (2 - f);
-
-//    float lambda = gps.latitude / 180 * M_PI;
-//    float phi = gps.longtitude / 180 * M_PI;
-
-//    float N = a / std::sqrt(1 - e_sq * sinf(lambda) * sinf(lambda));
-//    result.x = (gps.height + N) * cosf(lambda) * cosf(phi);
-//    result.y = (gps.height + N) * cosf(lambda) * sinf(phi);
-//    result.z = (gps.height + (1 - e_sq) * N) * sinf(lambda);
-
-//    return result;
-//}
 
 __global__ void cudaCalcDistanceToFace(float *distance,
                                        int num_faces, int num_partialPix, int offset,
@@ -113,5 +95,35 @@ void Simulator::gpuCalcDistanceToFace()
 
 
     gpuErrChk(cudaDeviceSynchronize());
+}
 
+
+void Simulator::calcTranformationMatrices()
+{
+    ObjStatus missile_cur = m_missile[m_current_img_id];
+    ObjStatus target_cur = m_target[m_current_img_id];
+    SeekerInfo seeker_cur = m_seeker[m_current_img_id];
+    ObjStatus missile_prev;
+    ObjStatus target_prev;
+    SeekerInfo seeker_prev;
+
+    if(m_current_img_id > 0)
+    {
+        missile_prev = m_missile[m_current_img_id - 1];
+        target_prev = m_target[m_current_img_id - 1];
+        seeker_prev = m_seeker[m_current_img_id - 1];
+    }
+    else {
+        missile_prev = m_missile[m_current_img_id];
+        target_prev = m_target[m_current_img_id];
+        seeker_prev = m_seeker[m_current_img_id];
+    }
+
+    cudaGetRb2cMatrix(m_Rb2c_cur, RotationAngle(0, seeker_cur.elevation, seeker_cur.azimuth));
+    cudaGetRb2cMatrix(m_Rb2c_prev, RotationAngle(0, seeker_prev.elevation, seeker_prev.azimuth));
+    cudaGetRi2bMatrix(m_Ri2b_missile_cur, missile_cur.angle);
+    cudaGetRi2bMatrix(m_Ri2b_missile_prev, missile_prev.angle);
+    cudaGetRi2bMatrix(m_Ri2b_target, target_cur.angle);
+    cudaGetRe2iMatrix(m_Re2i_missile, missile_cur.gps);
+    cudaGetRe2iMatrix(m_Re2i_target, target_cur.gps);
 }

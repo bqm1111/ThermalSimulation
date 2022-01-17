@@ -72,8 +72,8 @@ struct SeekerInfo
 struct ShipInfo
 {
     // surfaces and vertices are given
-    int num_surfaces;       // get from configuration of target model
-    int num_vertices;       // get from configuration of target model
+    int num_surfaces;       // get from configuration of target model (predefined)
+    int num_vertices;       // get from configuration of target model (predefined)
 
     float3 *surfaces;       // num_surfaces * sizeof(float3) bytes allocated
     // vertice coordinate with reference to the target

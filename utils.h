@@ -14,4 +14,7 @@ float deg2rad(float deg);
 float rad2deg(float rad);
 std::vector<std::pair<std::string, std::vector<float>>> read_csv(std::string filename);
 bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine);
+void printObjStatus(ObjStatus * obj, int numLine);
+void printSeekerInfo(SeekerInfo * obj, int numLine);
+
 #endif
