@@ -123,13 +123,6 @@ Simulator::~Simulator()
 
 }
 
-//!
-//! \brief Simulator::convertToImage
-//! \param ship
-//! \param missile
-//! \param target
-//! \param seeker
-//!
 //void Simulator::convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &target)
 //{
 //    Coordinate target_pos = Geoditic2ECEF(target.gps);
@@ -150,52 +143,52 @@ Simulator::~Simulator()
 //    }
 //}
 
-float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
-{
-    float2 result;
-    Coordinate target_pos = Geoditic2ECEF(target_gps);
-    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
-    float distance = std::sqrt((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
-                               (missile_pos.y - target_pos.y) * (missile_pos.y - target_pos.y) +
-                               (missile_pos.z - target_pos.z) * (missile_pos.z - target_pos.z));
+//float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
+//{
+//    float2 result;
+//    Coordinate target_pos = Geoditic2ECEF(target_gps);
+//    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+//    float distance = std::sqrt((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
+//                               (missile_pos.y - target_pos.y) * (missile_pos.y - target_pos.y) +
+//                               (missile_pos.z - target_pos.z) * (missile_pos.z - target_pos.z));
 
-    cv::Mat NED(3, 1, CV_32FC1);
-    NED.at<float>(0, 0) = (missile_pos.x - target_pos.x) / distance;
-    NED.at<float>(1, 0) = (missile_pos.y - target_pos.y) / distance;
-    NED.at<float>(2, 0) = (missile_pos.z - target_pos.z) / distance;
-    cv::Mat Rb2c_cur(3, 3, CV_32FC1, m_Rb2c_cur);
-    cv::Mat Ri2b_missile_cur(3, 3, CV_32FC1, m_Ri2b_missile_cur);
-    cv::Mat Re2i_missile(3,3, CV_32FC1, m_Re2i_missile);
+//    cv::Mat NED(3, 1, CV_32FC1);
+//    NED.at<float>(0, 0) = (missile_pos.x - target_pos.x) / distance;
+//    NED.at<float>(1, 0) = (missile_pos.y - target_pos.y) / distance;
+//    NED.at<float>(2, 0) = (missile_pos.z - target_pos.z) / distance;
+//    cv::Mat Rb2c_cur(3, 3, CV_32FC1, m_Rb2c_cur);
+//    cv::Mat Ri2b_missile_cur(3, 3, CV_32FC1, m_Ri2b_missile_cur);
+//    cv::Mat Re2i_missile(3,3, CV_32FC1, m_Re2i_missile);
 
-    cv::Mat Ldonic(3, 1, CV_32FC1);
-    Ldonic = Rb2c_cur.t() * Ri2b_missile_cur.t() * Re2i_missile * NED;
+//    cv::Mat Ldonic(3, 1, CV_32FC1);
+//    Ldonic = Rb2c_cur.t() * Ri2b_missile_cur.t() * Re2i_missile * NED;
 
-    if(Ldonic.at<float>(2, 0) < 0)
-        Ldonic.at<float>(2, 0) = - Ldonic.at<float>(2, 0);
+//    if(Ldonic.at<float>(2, 0) < 0)
+//        Ldonic.at<float>(2, 0) = - Ldonic.at<float>(2, 0);
 
-    result.x = Ldonic.at<float>(0, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
-    result.y = Ldonic.at<float>(1, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
-    return  result;
-}
+//    result.x = Ldonic.at<float>(0, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
+//    result.y = Ldonic.at<float>(1, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
+//    return  result;
+//}
 
-bool Simulator::isShipAppear()
-{
-    ObjStatus missile = m_missile[m_current_img_id];
-    ObjStatus target = m_target[m_current_img_id];
-    float2 target_imgPos = imageModel(missile, target.gps);
-    Coordinate target_pos = Geoditic2ECEF(target.gps);
-    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+//bool Simulator::isShipAppear()
+//{
+//    ObjStatus missile = m_missile[m_current_img_id];
+//    ObjStatus target = m_target[m_current_img_id];
+//    float2 target_imgPos = imageModel(missile, target.gps);
+//    Coordinate target_pos = Geoditic2ECEF(target.gps);
+//    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
 
-    float distance = (target_pos - missile_pos).norm();
+//    float distance = (target_pos - missile_pos).norm();
 
-    float delta_az = asin(target_imgPos.x / std::sqrt(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
-    float delta_el = asin(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
-    //    float delta_u0 = atan(m_ship.length / distance) * f;
-    //    float delta_w0 = atan(m_ship.height / distance) * f;
+//    float delta_az = asin(target_imgPos.x / std::sqrt(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
+//    float delta_el = asin(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
+//    //    float delta_u0 = atan(m_ship.length / distance) * f;
+//    //    float delta_w0 = atan(m_ship.height / distance) * f;
 
-    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
-            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
-}
+//    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
+//            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
+//}
 
 //void Simulator::calcTranformationMatrices()
 //{

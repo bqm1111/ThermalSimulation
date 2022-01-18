@@ -15,7 +15,6 @@ __device__ float inner_product(float2 a, float2 b)
     return (a.x * b.x + a.y * b.y);
 }
 
-
 __device__ bool isInsideObject(float2* data, int length_data, float2 imgPos)
 {
     float sum = 0;
@@ -51,11 +50,6 @@ __device__ bool isInsideObject(float2* data, int length_data, float2 imgPos)
     }
 }
 
-__device__ float calcDistanceToFaceHelper()
-{
-
-}
-
 __device__ float2 cudaImageModel(ObjStatus missile, GPS target_gps,
                                  float * Rb2c_cur, float *Ri2b_missile_cur,
                                  float * Re2i_missile, float fov_pixel)
@@ -87,10 +81,37 @@ __device__ float2 cudaImageModel(ObjStatus missile, GPS target_gps,
     return  result;
 }
 
+__device__ bool Simulator::isShipAppear()
+{
+    ObjStatus missile = m_missile[m_current_img_id];
+    ObjStatus target = m_target[m_current_img_id];
+    float2 target_imgPos = cudaImageModel(missile, target.gps, m_Rb2c_cur,
+                                             m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel);
+    Coordinate target_pos = Geoditic2ECEF(target.gps);
+    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+
+    float distance = (target_pos - missile_pos).norm();
+
+    float delta_az = asinf(target_imgPos.x / sqrtf(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
+    float delta_el = asinf(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
+    //    float delta_u0 = atan(m_ship.length / distance) * f;
+    //    float delta_w0 = atan(m_ship.height / distance) * f;
+
+    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
+            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
+}
+
+
+__device__ float calcDistanceToFaceHelper()
+{
+
+}
 __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
                                    float3 * ship_vertices, ObjStatus missile, ObjStatus target,
+                                   float *Rb2c_cur, float *Ri2b_missile_cur,
+                                   float *Re2i_missile,
                                    float * Ri2b_target, float * Re2i_target,
-                                   int num_vertices)
+                                   int num_vertices, float fov_pixel)
 {
     int idx = threadIdx.x + IMUL(blockDim.x, blockIdx.x);
     if(idx < num_vertices)
@@ -103,29 +124,26 @@ __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
         float temp[9];
         float NED[3];
         mul3x3TransposeFirst(&temp[0], Re2i_target, Ri2b_target);
-//        mul3x3ToVec3x1(&NED[0], temp, vertex);
-//        Coordinate tmp = Geoditic2ECEF(target.gps) + Coordinate(NED[0], NED[1], NED[2]);
+        mul3x3ToVec3x1(&NED[0], temp, vertex);
+        Coordinate tmp = Geoditic2ECEF(target.gps) + Coordinate(NED[0], NED[1], NED[2]);
+        ship_gps[idx] = ECEF2Geoditic(tmp);
+        shipImgPos[idx] = cudaImageModel(missile,ship_gps[idx], Rb2c_cur,
+                                         Ri2b_missile_cur, Re2i_missile, fov_pixel);
     }
 }
 
-void Simulator::convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &target)
+void Simulator::convertToImage()
 {
-    Coordinate target_pos = Geoditic2ECEF(target.gps);
-    cv::Mat Ri2b_target(3, 3, CV_32FC1, m_Ri2b_target);
-    cv::Mat Re2i_target(3, 3, CV_32FC1, m_Re2i_target);
-
-    for(int i = 0; i < ship.num_vertices; i++)
-    {
-        cv::Mat vertex(3, 1, CV_32FC1, (float*)(ship.vertices + i));
-        cv::Mat NED(3, 1, CV_32FC1);
-        NED = Re2i_target.t() * Ri2b_target * vertex;
-        Coordinate temp;
-        temp.x = target_pos.x + NED.at<float>(0,0);
-        temp.y = target_pos.y + NED.at<float>(1,0);
-        temp.z = target_pos.z + NED.at<float>(2,0);
-        ship.gps[i] = ECEF2Geoditic(temp);
-        ship.imgPos[i] = imageModel(missile, ship.gps[i]);
-    }
+    int numBlock = (m_ship.num_vertices + threadsPerBlock - 1) / threadsPerBlock;
+    cudaConvertToImage<<<numBlock, threadsPerBlock>>>(m_ship.gps, m_ship.imgPos,
+                                                      m_ship.vertices, m_missile[m_current_img_id],
+                                                      m_target[m_current_img_id],
+                                                      m_Rb2c_cur, m_Ri2b_missile_cur,
+                                                      m_Re2i_missile,
+                                                      m_Ri2b_target,
+                                                      m_Re2i_target,
+                                                      m_ship.num_vertices, m_fov_pixel);
+    gpuErrChk(cudaDeviceSynchronize());
 }
 
 __global__ void cudaCalcDistanceToFace(float *distance,
@@ -146,14 +164,14 @@ __global__ void cudaCalcDistanceToFace(float *distance,
     {
         float u = col + (float)(partialPixIdx_X - 0.5)/ PIXEL_GRID_SIZE - width / 2 - 0.5;
         float w = row + (float)(partialPixIdx_Y - 0.5)/ PIXEL_GRID_SIZE - height / 2 - 0.5;
-//        if(isInsideObject())
-//        {
+        if(isInsideObject())
+        {
 
-//        }
-//        else
-//        {
-//            distance[resultIdx] = 0;
-//        }
+        }
+        else
+        {
+            distance[resultIdx] = 0;
+        }
     }
 }
 
@@ -163,7 +181,6 @@ void Simulator::gpuCalcDistanceToFace()
     dim3 blockDim(threadsPerBlock, threadsPerBlock);
     dim3 gridDim(ceil((float)m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE / threadsPerBlock),
                  ceil((float)m_ship.num_surfaces / threadsPerBlock));
-
 
     gpuErrChk(cudaDeviceSynchronize());
 }

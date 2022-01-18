@@ -27,8 +27,8 @@ private:
     int m_fps;
     int m_duration;
     int m_totalFrame;
-    void convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &target);
-    float2 imageModel(ObjStatus missile, GPS target_gps);
+    void convertToImage();
+//    float2 imageModel(ObjStatus missile, GPS target_gps);
     void calcTranformationMatrices();
     RayInfo calcDistance(ObjStatus missile, uint2 particlePix);
     void gpuCalcDistanceToFace();
