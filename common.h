@@ -46,6 +46,11 @@ struct Coordinate
     {
         return Coordinate(x - coor.x, y - coor.y, z - coor.z);
     }
+    Coordinate operator +(const Coordinate & coor)
+    {
+        return Coordinate(x + coor.x, y + coor.y, z + coor.z);
+    }
+
     float x;
     float y;
     float z;

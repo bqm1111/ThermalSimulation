@@ -1,16 +1,97 @@
 #include "utils.h"
+
+
+__host__ __device__ float deg2rad(float deg)
+{
+    return deg * M_PI / 180.0;
+}
+
+__host__ __device__ float rad2deg(float rad)
+{
+    return rad * 180.0 / M_PI;
+}
+
+__host__ __device__ void mul3x3ToVec3x1(float *dst, float *mat, float *vec)
+{
+#pragma unroll
+    for(int y = 0; y < 3; y++)
+    {
+        for(int x = 0; x < 1; x++)
+        {
+            int idx = y * 3 + x;
+            dst[idx] = 0;
+            for(int k = 0; k < 3; k++)
+            {
+                dst[idx] = dst[idx] + mat[y * 3 + k] * vec[k * 3 + x];
+            }
+        }
+    }
+}
+
+__host__ __device__ void mul3x3(float *dst, float *src1, float *src2)
+{
+#pragma unroll
+    for(int y = 0; y < 3; y++)
+    {
+        for(int x = 0; x < 3; x++)
+        {
+            int idx = y * 3 + x;
+            dst[idx] = 0;
+            for(int k = 0; k < 3; k++)
+            {
+                dst[idx] = dst[idx] + src1[y * 3 + k] * src2[k * 3 + x];
+            }
+        }
+    }
+}
+
+__host__ __device__ void mul3x3TransposeFirst(float *dst, float *src1, float *src2)
+{
+#pragma unroll
+    for(int y = 0; y < 3; y++)
+    {
+        for(int x = 0; x < 3; x++)
+        {
+            int idx = y * 3 + x;
+            dst[idx] = 0;
+            for(int k = 0; k < 3; k++)
+            {
+                dst[idx] = dst[idx] + src1[k * 3 + y] * src2[k * 3 + x];
+            }
+        }
+    }
+}
+
+__host__ __device__ void mul3x3TransposeBoth(float *dst, float *src1, float *src2)
+{
+#pragma unroll
+    for(int y = 0; y < 3; y++)
+    {
+        for(int x = 0; x < 3; x++)
+        {
+            int idx = y * 3 + x;
+            dst[idx] = 0;
+            for(int k = 0; k < 3; k++)
+            {
+                dst[idx] = dst[idx] + src1[k * 3 + y] * src2[x * 3 + k];
+            }
+        }
+    }
+}
+
+
 __host__ __device__ void getRi2bMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = cos(angle.pitch) * cos(angle.yaw);
     matrix[1] = sin(angle.roll) * sin(angle.pitch) * cos(angle.yaw) -
-                cos(angle.roll) * sin(angle.yaw);
+            cos(angle.roll) * sin(angle.yaw);
     matrix[2] = cos(angle.roll)*sin(angle.pitch)*cos(angle.yaw) +
-                sin(angle.roll)*sin(angle.yaw);
+            sin(angle.roll)*sin(angle.yaw);
     matrix[3] = cos(angle.pitch) * sin(angle.yaw);
     matrix[4] = sin(angle.roll) * sin(angle.pitch) * sin(angle.yaw) +
-                cos(angle.roll) * cos(angle.yaw);
+            cos(angle.roll) * cos(angle.yaw);
     matrix[5] = cos(angle.roll) * sin(angle.pitch) * sin(angle.yaw) -
-                sin(angle.roll) * cos(angle.yaw);
+            sin(angle.roll) * cos(angle.yaw);
     matrix[6] = -sin(angle.pitch);
     matrix[7] = sin(angle.roll) * cos(angle.pitch);
     matrix[8] = cos(angle.roll) * cos(angle.pitch);

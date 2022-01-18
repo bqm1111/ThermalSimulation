@@ -150,34 +150,33 @@ void Simulator::convertToImage(ShipInfo &ship, ObjStatus &missile, ObjStatus &ta
     }
 }
 
-float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
-{
-    float2 result;
-    Coordinate target_pos = Geoditic2ECEF(target_gps);
-    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
-    float distance = std::sqrt((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
-                               (missile_pos.y - target_pos.y) * (missile_pos.y - target_pos.y) +
-                               (missile_pos.z - target_pos.z) * (missile_pos.z - target_pos.z));
+//float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
+//{
+//    float2 result;
+//    Coordinate target_pos = Geoditic2ECEF(target_gps);
+//    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+//    float distance = std::sqrt((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
+//                               (missile_pos.y - target_pos.y) * (missile_pos.y - target_pos.y) +
+//                               (missile_pos.z - target_pos.z) * (missile_pos.z - target_pos.z));
 
-    cv::Mat NED(3, 1, CV_32FC1);
-    NED.at<float>(0, 0) = (missile_pos.x - target_pos.x) / distance;
-    NED.at<float>(1, 0) = (missile_pos.y - target_pos.y) / distance;
-    NED.at<float>(2, 0) = (missile_pos.z - target_pos.z) / distance;
-    cv::Mat Rb2c_cur(3, 3, CV_32FC1, m_Rb2c_cur);
-    cv::Mat Ri2b_missile_cur(3, 3, CV_32FC1, m_Ri2b_missile_cur);
-    cv::Mat Re2i_missile(3,3, CV_32FC1, m_Re2i_missile);
+//    cv::Mat NED(3, 1, CV_32FC1);
+//    NED.at<float>(0, 0) = (missile_pos.x - target_pos.x) / distance;
+//    NED.at<float>(1, 0) = (missile_pos.y - target_pos.y) / distance;
+//    NED.at<float>(2, 0) = (missile_pos.z - target_pos.z) / distance;
+//    cv::Mat Rb2c_cur(3, 3, CV_32FC1, m_Rb2c_cur);
+//    cv::Mat Ri2b_missile_cur(3, 3, CV_32FC1, m_Ri2b_missile_cur);
+//    cv::Mat Re2i_missile(3,3, CV_32FC1, m_Re2i_missile);
 
+//    cv::Mat Ldonic(3, 1, CV_32FC1);
+//    Ldonic = Rb2c_cur.t() * Ri2b_missile_cur.t() * Re2i_missile * NED;
 
-    cv::Mat Ldonic(3, 1, CV_32FC1);
-    Ldonic = Rb2c_cur.t() * Ri2b_missile_cur.t() * Re2i_missile * NED;
+//    if(Ldonic.at<float>(2, 0) < 0)
+//        Ldonic.at<float>(2, 0) = - Ldonic.at<float>(2, 0);
 
-    if(Ldonic.at<float>(2, 0) < 0)
-        Ldonic.at<float>(2, 0) = - Ldonic.at<float>(2, 0);
-
-    result.x = Ldonic.at<float>(0, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
-    result.y = Ldonic.at<float>(1, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
-    return  result;
-}
+//    result.x = Ldonic.at<float>(0, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
+//    result.y = Ldonic.at<float>(1, 0) / Ldonic.at<float>(2, 0) * m_fov_pixel;
+//    return  result;
+//}
 
 bool Simulator::isShipAppear()
 {
@@ -241,6 +240,7 @@ bool Simulator::isShipAppear()
 //    getRe2iMatrix((float*)temp.data, target_cur.gps);
 //    gpuErrChk(cudaMemcpy(m_Re2i_target, (float*)temp.data, 9 * sizeof(float), cudaMemcpyHostToDevice));
 //}
+
 RayInfo Simulator::calcDistance(ObjStatus missile, uint2 particlePix)
 {
     cv::Mat Ldonic(3, 1, CV_32FC1);
