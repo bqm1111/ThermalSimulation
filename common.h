@@ -19,7 +19,7 @@ struct GPS {
 };
 struct RotationAngle
 {
-    RotationAngle(float r = 0, float p = 0, float y = 0)
+    __host__ __device__ RotationAngle(float r = 0, float p = 0, float y = 0)
     {
         roll = r;
         pitch = p;
@@ -32,21 +32,21 @@ struct RotationAngle
 
 struct Coordinate
 {
-    Coordinate(float x_ = 0, float y_ = 0, float z_= 0)
+    __host__ __device__ Coordinate(float x_ = 0, float y_ = 0, float z_= 0)
     {
         x = x_;
         y = y_;
         z = z_;
     }
-    float norm()
+    __host__ __device__ float norm()
     {
         return std::sqrt(x * x + y * y + z * z);
     }
-    Coordinate operator -(const Coordinate & coor)
+    __host__ __device__ Coordinate operator -(const Coordinate & coor)
     {
         return Coordinate(x - coor.x, y - coor.y, z - coor.z);
     }
-    Coordinate operator +(const Coordinate & coor)
+    __host__ __device__ Coordinate operator +(const Coordinate & coor)
     {
         return Coordinate(x + coor.x, y + coor.y, z + coor.z);
     }

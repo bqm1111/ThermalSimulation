@@ -56,7 +56,9 @@ __device__ float calcDistanceToFaceHelper()
 
 }
 
-__host__ __device__ float2 Simulator::imageModel(ObjStatus missile, GPS target_gps)
+__device__ float2 cudaImageModel(ObjStatus missile, GPS target_gps,
+                                 float * Rb2c_cur, float *Ri2b_missile_cur,
+                                 float * Re2i_missile, float fov_pixel)
 {
     float2 result;
     Coordinate target_pos = Geoditic2ECEF(target_gps);
@@ -73,15 +75,15 @@ __host__ __device__ float2 Simulator::imageModel(ObjStatus missile, GPS target_g
     float Ldonic[3];
     float temp1[9];
     float temp2[9];
-    mul3x3TransposeBoth(&temp1[0], m_Rb2c_cur, m_Ri2b_missile_cur);
-    mul3x3(&temp2[0], &temp1[0], m_Re2i_missile);
+    mul3x3TransposeBoth(&temp1[0], Rb2c_cur, Ri2b_missile_cur);
+    mul3x3(&temp2[0], &temp1[0], Re2i_missile);
     mul3x3ToVec3x1(&Ldonic[0], &temp2[0], &NED[0]);
     if(Ldonic[2] < 0)
     {
         Ldonic[2] = - Ldonic[2];
     }
-    result.x = Ldonic[0] / Ldonic[2] * m_fov_pixel;
-    result.y = Ldonic[1] / Ldonic[2] * m_fov_pixel;
+    result.x = Ldonic[0] / Ldonic[2] * fov_pixel;
+    result.y = Ldonic[1] / Ldonic[2] * fov_pixel;
     return  result;
 }
 
@@ -101,8 +103,8 @@ __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
         float temp[9];
         float NED[3];
         mul3x3TransposeFirst(&temp[0], Re2i_target, Ri2b_target);
-        mul3x3ToVec3x1(&NED[0], temp, vertex);
-        Coordinate tmp = Geoditic2ECEF(target.gps) + Coordinate(NED[0], NED[1], NED[2]);
+//        mul3x3ToVec3x1(&NED[0], temp, vertex);
+//        Coordinate tmp = Geoditic2ECEF(target.gps) + Coordinate(NED[0], NED[1], NED[2]);
     }
 }
 
