@@ -10,6 +10,33 @@ __host__ __device__ float rad2deg(float rad)
     return rad * 180.0 / M_PI;
 }
 
+__host__ __device__ float calcGainTransmittance(float distance)
+{
+    return expf(-0.26 * distance / 1000);
+}
+
+__host__ __device__ float norm(float2 input)
+{
+    return sqrtf(input.x * input.x + input.y * input.y);
+}
+
+__host__ __device__ float inner_product(float2 a, float2 b)
+{
+    return (a.x * b.x + a.y * b.y);
+}
+
+__host__ __device__ Coordinate cross_product(Coordinate a, Coordinate b)
+{
+    return Coordinate(a.y * b.z - a.z * b.y,
+                      a.z * b.x - a.x * b.z,
+                      a.x * b.y - a.y * b.x);
+}
+__host__ __device__ Coordinate vectorCalculator(GPS src1, GPS src2)
+{
+    Coordinate coor1 = Geoditic2ECEF(src1);
+    Coordinate coor2 = Geoditic2ECEF(src2);
+    return (coor2 - coor1) / (coor2 - coor1).norm();
+}
 __host__ __device__ void mul3x3ToVec3x1(float *dst, float *mat, float *vec)
 {
 #pragma unroll
@@ -78,7 +105,33 @@ __host__ __device__ void mul3x3TransposeBoth(float *dst, float *src1, float *src
     }
 }
 
+__host__ __device__ void pinv3x2(float *dst, float *src)
+{
+    float tmp[4];
+#pragma unroll
+    for(int y = 0; y < 2; y++)
+    {
+        for(int x = 0; x < 2; x++)
+        {
+            int idx = y * 2 + x;
+            tmp[idx] = 0;
+            for(int k = 0; k < 3; k++)
+            {
+                tmp[idx] += src[k * 2 + y] * src[k * 2 + x];
+            }
+        }
+    }
 
+    float det = tmp[0] * tmp[3] - tmp[1] * tmp[2];
+    float inv[4];
+    inv[0] = tmp[3] /det;
+    inv[1] = -tmp[2] /det;
+    inv[2] = -tmp[3] /det;
+    inv[3] = tmp[0] /det;
+//#pragma unroll
+
+}
+// Matrix Ri2b in matlab code
 __host__ __device__ void getRi2bMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = cosf(angle.pitch) * cosf(angle.yaw);
@@ -95,7 +148,7 @@ __host__ __device__ void getRi2bMatrix(float* matrix, RotationAngle angle)
     matrix[7] = sinf(angle.roll) * cosf(angle.pitch);
     matrix[8] = cosf(angle.roll) * cosf(angle.pitch);
 }
-
+// Matrix Ldoni in matlab code
 __device__ void getRb2cMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = -sinf(angle.yaw);
@@ -108,7 +161,7 @@ __device__ void getRb2cMatrix(float* matrix, RotationAngle angle)
     matrix[7] = cosf(angle.pitch);
     matrix[8] =-sinf(angle.pitch);
 }
-
+// Matrix M in matlab code
 __host__ __device__ void getRe2iMatrix(float* matrix, GPS gps)
 {
     float lambda = gps.latitude / 180.0 * M_PI;

@@ -42,13 +42,29 @@ struct Coordinate
     {
         return std::sqrt(x * x + y * y + z * z);
     }
+
     __host__ __device__ Coordinate operator -(const Coordinate & coor)
     {
         return Coordinate(x - coor.x, y - coor.y, z - coor.z);
     }
+
     __host__ __device__ Coordinate operator +(const Coordinate & coor)
     {
         return Coordinate(x + coor.x, y + coor.y, z + coor.z);
+    }
+
+    __host__ __device__ float operator *(const Coordinate & coor)
+    {
+        return (x * coor.x + y * coor.y + z * coor.z);
+    }
+
+    __host__ __device__ Coordinate operator /(const float s)
+    {
+        if(s==0)
+        {
+            printf("Invalid division\n");
+        }
+        return Coordinate(x/s, y/s, z/s);
     }
 
     float x;
@@ -64,8 +80,18 @@ struct ObjStatus
 
 struct RayInfo
 {
+    __host__ __device__ RayInfo(float distance_ = 0, float angle_ = 0, int objIdx_= 0)
+    {
+        distance = distance_;
+        angle = angle_;
+        objIdx = objIdx_;
+    }
+
     float distance;
     float angle;
+    int objIdx;     // 0: ship
+                    // 1: ocean
+                    // 2: sky
 };
 
 struct SeekerInfo

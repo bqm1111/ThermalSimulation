@@ -78,8 +78,7 @@ void Simulator::init()
     gpuErrChk(cudaMalloc((void**)&m_ship.imgPos, m_ship.num_vertices *sizeof(float3)));
 
     // Allocate core data for rendering image
-    gpuErrChk(cudaMalloc((void**)&m_distanceToFace, grid_size * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_InorOut, grid_size * sizeof(bool)));
+    gpuErrChk(cudaMalloc((void**)&m_rayToFace, grid_size * sizeof(RayInfo)));
     gpuErrChk(cudaMalloc((void**)&m_partialRadiance, grid_size * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_radiance, m_width * m_height * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_renderedImg, m_width * m_height * sizeof(unsigned char)));
@@ -106,8 +105,7 @@ Simulator::~Simulator()
     gpuErrChk(cudaFree(m_ship.imgPos));
 
     // Free core data for rendering image
-    gpuErrChk(cudaFree(m_distanceToFace));
-    gpuErrChk(cudaFree(m_InorOut));
+    gpuErrChk(cudaFree(m_rayToFace));
     gpuErrChk(cudaFree(m_radiance));
     gpuErrChk(cudaFree(m_partialRadiance));
     gpuErrChk(cudaFree(m_renderedImg));

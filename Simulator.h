@@ -19,9 +19,9 @@ public:
     SeekerInfo * m_seeker;          // (fps * duration * sizeof(SeekerInfo) bytes allocated
     ShipInfo m_ship;
     int m_current_img_id;       // id of current image being simulated
-    void run();
     void init();
     void loadData();
+    void run();
 
 private:
     int m_fps;
@@ -57,7 +57,7 @@ private:
     float *m_Re2i_target;       // Matrix transform between earth to inertial(missile)
 
     // Core data for rendering image
-    float * m_distanceToFace;
+    RayInfo * m_rayToFace;
     bool * m_InorOut;
     float * m_partialRadiance;
     float * m_radiance;
