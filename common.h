@@ -58,6 +58,11 @@ struct Coordinate
         return (x * coor.x + y * coor.y + z * coor.z);
     }
 
+    __host__ __device__ Coordinate operator *(const float s)
+    {
+        return Coordinate(x * s, y * s, z * s);
+    }
+
     __host__ __device__ Coordinate operator /(const float s)
     {
         if(s==0)
@@ -80,7 +85,7 @@ struct ObjStatus
 
 struct RayInfo
 {
-    __host__ __device__ RayInfo(float distance_ = 0, float angle_ = 0, int objIdx_= 0)
+    __host__ __device__ RayInfo(float distance_, float angle_, int objIdx_)
     {
         distance = distance_;
         angle = angle_;
@@ -89,9 +94,7 @@ struct RayInfo
 
     float distance;
     float angle;
-    int objIdx;     // 0: ship
-                    // 1: ocean
-                    // 2: sky
+    int objIdx;    // 0: sky  1: ocean 2: object
 };
 
 struct SeekerInfo

@@ -128,8 +128,17 @@ __host__ __device__ void pinv3x2(float *dst, float *src)
     inv[1] = -tmp[2] /det;
     inv[2] = -tmp[3] /det;
     inv[3] = tmp[0] /det;
-//#pragma unroll
-
+#pragma unroll
+    for(int y = 0; y < 2; y++)
+        for(int x = 0; x< 3; x++)
+        {
+            int idx = y * 3 + x;
+            dst[idx] = 0;
+            for(int k = 0; k < 2; k++)
+            {
+                dst[idx] += inv[y * 2 + k] * src[x * 2 + k];
+            }
+        }
 }
 // Matrix Ri2b in matlab code
 __host__ __device__ void getRi2bMatrix(float* matrix, RotationAngle angle)

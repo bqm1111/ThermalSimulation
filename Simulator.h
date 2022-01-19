@@ -28,10 +28,9 @@ private:
     int m_duration;
     int m_totalFrame;
     void convertToImage();
-//    float2 imageModel(ObjStatus missile, GPS target_gps);
     void calcTranformationMatrices();
-    RayInfo calcDistance(ObjStatus missile, uint2 particlePix);
-    void gpuCalcDistanceToFace();
+    void calcDistance(int offset);
+    void calcRadiance(int offset);
     bool isShipAppear();
 
     // thermal parameter
@@ -57,8 +56,7 @@ private:
     float *m_Re2i_target;       // Matrix transform between earth to inertial(missile)
 
     // Core data for rendering image
-    RayInfo * m_rayToFace;
-    bool * m_InorOut;
+    RayInfo * m_ray;
     float * m_partialRadiance;
     float * m_radiance;
     unsigned char * m_renderedImg;

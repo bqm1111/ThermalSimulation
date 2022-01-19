@@ -22,6 +22,10 @@ extern __host__ __device__ float inner_product(float2 a, float2 b);
 extern __host__ __device__ Coordinate cross_product(Coordinate a, Coordinate b);
 extern __host__ __device__ Coordinate vectorCalculator(GPS src1, GPS src2);
 extern __host__ __device__ void pinv3x2(float *dst, float *src);
+extern __host__ __device__ float solarRadiance(float *dst, float *src);
+extern __host__ __device__ float pathRadiance(float *dst, float *src);
+extern __host__ __device__ float solarRadiance(float *dst, float *src);
+
 bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine);
 void printObjStatus(ObjStatus * obj, int numLine);
 void printSeekerInfo(SeekerInfo * obj, int numLine);
