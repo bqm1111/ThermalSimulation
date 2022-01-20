@@ -124,10 +124,18 @@ void Simulator::run()
 {
     for(int i = 0; i < m_fps * m_duration; i++)
     {
-        for(int idx = 0; idx < m_width * m_height / m_batch_size; idx++)
+        calcTranformationMatrices();
+        convertToImage();
+        for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
         {
-
+            calcDistance(offset);
+            calcRadiance(offset);
+            renderPartialImg(offset);
         }
+        cv::Mat img(m_height, m_width, CV_8UC1);
+        gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+        cv::imshow("img", img);
+        cv::waitKey(2);
         m_current_img_id++;
     }
 }

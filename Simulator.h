@@ -11,7 +11,7 @@
 class Simulator
 {
 public:
-    Simulator(int fps=30, int duration = 150, int batch_size = 32);
+    Simulator(int fps=30, int duration = 150, int batch_size = 256);
     ~Simulator();
 
     ObjStatus * m_missile;          // (fps * duration * sizeof(ObjStatus) bytes allocated
@@ -31,6 +31,7 @@ private:
     void calcTranformationMatrices();
     void calcDistance(int offset);
     void calcRadiance(int offset);
+    void renderPartialImg(int offset);
     bool isShipAppear();
 
     // thermal parameter
@@ -59,6 +60,7 @@ private:
     RayInfo * m_ray;
     float * m_partialRadiance;
     float * m_radiance;
+
     unsigned char * m_renderedImg;
     int m_batch_size;
 

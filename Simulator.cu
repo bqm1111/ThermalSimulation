@@ -357,7 +357,10 @@ void Simulator::calcDistance(int offset)
 
 __global__ void cudaCalcRadiance(RayInfo *distance,
                                  float * radiance,
-                                 int num_surfaces, int batch_size, float ifov)
+                                 int num_surfaces, int batch_size, float ifov,
+                                 float solar_coeff, float ocean_coeff,
+                                 float sky_coeff, float object_coeff,
+                                 float path_coeff)
 {
     int idx = threadIdx.x + IMUL(blockDim.x, blockIdx.x);
     int grid_size = batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE;
@@ -383,38 +386,65 @@ __global__ void cudaCalcRadiance(RayInfo *distance,
         }
         if(hitObj)
         {
-            float transmiss = calcGainTransmittance(minDist);
-            e = 0.02 *(1 - powf(1- cosf(distance[hitSurfaceIdx].angle), 5));
-
+            radiance[idx] = objectRadiance(ifov, minDist, distance[hitSurfaceIdx].angle,
+                                           solar_coeff, ocean_coeff,
+                                           sky_coeff, object_coeff,
+                                           path_coeff);
         }
         else
         {
             if(distance[idx].objIdx == 0)
             {
-
+                radiance[idx] = skyRadiance(ifov, sky_coeff, path_coeff);
             }
             else if(distance[idx].objIdx == 1)
             {
-
+                radiance[idx] = oceanRadiance(ifov, distance[idx].distance, distance[idx].angle,
+                                              solar_coeff, ocean_coeff,
+                                              sky_coeff, object_coeff,
+                                              path_coeff);
             }
         }
-
     }
 }
 
 void Simulator::calcRadiance(int offset)
 {
-    Coordinate missile_pos = Geoditic2ECEF(m_missile[m_current_img_id].gps);
-    int num_partialPix = m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE;
-    int num_surfaces = m_ship.num_surfaces;
-
-    dim3 blockDim(threadsPerBlock, threadsPerBlock);
-    dim3 gridDim(ceil((float)num_partialPix / threadsPerBlock),
-                 ceil((float)num_surfaces / threadsPerBlock));
-
+    float ifov = m_fov / m_width;
+    int numBlock = (m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE + threadsPerBlock * threadsPerBlock - 1) /(threadsPerBlock * threadsPerBlock);
+    cudaCalcRadiance<<<numBlock, threadsPerBlock * threadsPerBlock>>>(m_ray, m_radiance, m_ship.num_surfaces, m_batch_size, ifov,
+                     m_solar_coeff, m_ocean_coeff, m_sky_coeff, m_object_coeff, m_horizon_coeff);
     gpuErrChk(cudaDeviceSynchronize());
 
 }
+
+__global__ void cudaRenderPartialImg(unsigned char * renderedImg, float * radiance, int fov, int offset, int batch_size)
+{
+    int idx = threadIdx.x + IMUL(blockDim.x, blockIdx.x);
+    if(idx < batch_size)
+    {
+        float tmp = 0;
+#pragma unroll
+        for(int i = 0; i < PIXEL_GRID_SIZE * PIXEL_GRID_SIZE; i++)
+        {
+            tmp = tmp + radiance[idx * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE + i];
+        }
+        int imgIdx = offset * batch_size + idx;
+        renderedImg[imgIdx] = (unsigned char)(tmp / (PIXEL_GRID_SIZE * PIXEL_GRID_SIZE) * 0.6 * powf(10, 8) / powf(fov, 2));
+        if(renderedImg[imgIdx] > 255)
+        {
+            renderedImg[imgIdx] = 255;
+        }
+    }
+}
+
+void Simulator::renderPartialImg(int offset)
+{
+
+    cudaRenderPartialImg<<<m_batch_size, PIXEL_GRID_SIZE * PIXEL_GRID_SIZE>>>(m_renderedImg, m_radiance, m_fov, offset, m_batch_size);
+    gpuErrChk(cudaDeviceSynchronize());
+}
+
 void Simulator::calcTranformationMatrices()
 {
     ObjStatus missile_cur = m_missile[m_current_img_id];

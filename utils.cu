@@ -31,12 +31,14 @@ __host__ __device__ Coordinate cross_product(Coordinate a, Coordinate b)
                       a.z * b.x - a.x * b.z,
                       a.x * b.y - a.y * b.x);
 }
+
 __host__ __device__ Coordinate vectorCalculator(GPS src1, GPS src2)
 {
     Coordinate coor1 = Geoditic2ECEF(src1);
     Coordinate coor2 = Geoditic2ECEF(src2);
     return (coor2 - coor1) / (coor2 - coor1).norm();
 }
+
 __host__ __device__ void mul3x3ToVec3x1(float *dst, float *mat, float *vec)
 {
 #pragma unroll
@@ -232,4 +234,42 @@ __host__ __device__ Coordinate Geoditic2ECEF(GPS gps)
     result.y = (gps.height + N) * cosf(lambda) * sinf(phi);
     result.z = (gps.height + (1 - e_sq) * N) * sinf(lambda);
     return result;
+}
+__host__ __device__ float objectRadiance(float ifov, float distance, float beta,
+                                         float solar_coeff, float ocean_coeff,
+                                         float sky_coeff, float object_coeff,
+                                         float path_coeff)
+{
+    float transmiss = calcGainTransmittance(distance);
+    float ifov_rad_sqr = powf(deg2rad(ifov), 2);
+    float e = 0.02 * (1 - powf(1 - cosf(beta), 5));
+    float solar_ifov = solar_coeff / M_PI * (1 - e) * transmiss * ifov_rad_sqr;
+    float ocean_ifov = ocean_coeff / M_PI * 0.9 * (1 - e) * transmiss * ifov_rad_sqr;
+    float sky_ifov = sky_coeff / M_PI * (1 - e) * transmiss * ifov_rad_sqr;
+    float object_ifov = object_coeff / M_PI * e * transmiss * ifov_rad_sqr;
+    float path_ifov = path_coeff / M_PI * ifov_rad_sqr;
+
+    return (object_ifov + solar_ifov + ocean_ifov + sky_ifov + path_ifov);
+}
+__host__ __device__ float oceanRadiance(float ifov, float distance, float beta,
+                                               float solar_coeff, float ocean_coeff,
+                                               float sky_coeff, float object_coeff,
+                                               float path_coeff)
+{
+    float transmiss = calcGainTransmittance(distance);
+    float ifov_rad_sqr = powf(deg2rad(ifov), 2);
+    float e = 0.9 * (1 - powf(1 - cosf(beta), 5));
+
+    float solar_ifov = solar_coeff / M_PI * (1 - e) * transmiss * ifov_rad_sqr;
+    float ocean_ifov = ocean_coeff / M_PI * e * transmiss * ifov_rad_sqr;
+    float sky_ifov = sky_coeff / M_PI * (1 - e) * transmiss * ifov_rad_sqr;
+    float path_ifov = path_coeff / M_PI * ifov_rad_sqr * (1 - expf(-0.25 * distance /1000));
+
+    return (solar_ifov + ocean_ifov + sky_ifov + path_ifov);
+}
+__host__ __device__ float skyRadiance(float ifov, float sky_coeff, float path_coeff)
+{
+    float ifov_rad_sqr = powf(deg2rad(ifov), 2);
+
+    return (sky_coeff / M_PI * ifov_rad_sqr + path_coeff /M_PI * ifov_rad_sqr);
 }

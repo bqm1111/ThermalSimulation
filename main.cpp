@@ -3,7 +3,7 @@
 #include "test.h"
 int main(int argc, char **argv)
 {
-//    testSimulator();
+    testSimulator();
 //    testReadFromFile();
-    testMul3x3();
+//    testMul3x3();
 }
