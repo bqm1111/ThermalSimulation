@@ -180,7 +180,7 @@ void Simulator::run()
             gpuErrChk(cudaMemcpy(target_prev, m_target + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
             gpuErrChk(cudaMemcpy(seeker_prev, m_seeker + m_current_img_id, sizeof(SeekerInfo), cudaMemcpyDeviceToDevice));
         }
-
+        printf("****** Start rendering image #%d ******\n", m_current_img_id + 1);
         calcTranformationMatrices(missile_cur, missile_prev, target_cur, target_prev,
                                   seeker_cur, seeker_prev);
         printf("Calculate Transformation Matrices: DONE !!!\n");

@@ -136,5 +136,4 @@ struct ShipInfo
     float length;      // length of the ship
     float height;      // height of the ship
 };
-
 #endif

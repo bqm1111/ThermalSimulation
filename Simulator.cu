@@ -276,8 +276,6 @@ __device__ RayInfo calcDistanceToFace(float *NED, float2 *surfaceImgPos,
 }
 
 __global__ void cudaCalcDistance(RayInfo *distance,
-                                 float3 *ship_faces,
-                                 float2 *shipImgPos,
                                  GPS *ship_gps,
                                  GPS3 * ship_surface_gps,
                                  float6 * ship_surface_imgPos,
@@ -351,7 +349,7 @@ void Simulator::calcDistance(int offset, ObjStatus * missile_cur)
     dim3 gridDim(ceil((float)num_partialPix / threadsPerBlock),
                  ceil((float)num_surfaces / threadsPerBlock));
 
-    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.surfaces,m_ship.imgPos, m_ship.gps,m_ship.surface_gps,
+    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.gps,m_ship.surface_gps,
                                             m_ship.surface_imgPos, missile_cur,
                                             m_Rb2c_cur, m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel,
                                             num_surfaces, num_partialPix, offset, m_batch_size, m_width, m_height);

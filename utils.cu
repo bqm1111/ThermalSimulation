@@ -160,7 +160,7 @@ __host__ __device__ void getRi2bMatrix(float* matrix, RotationAngle angle)
     matrix[8] = cosf(angle.roll) * cosf(angle.pitch);
 }
 // Matrix Ldoni in matlab code
-__device__ void getRb2cMatrix(float* matrix, RotationAngle angle)
+__host__ __device__ void getRb2cMatrix(float* matrix, RotationAngle angle)
 {
     matrix[0] = -sinf(angle.yaw);
     matrix[1] = sinf(angle.pitch) * cosf(angle.yaw);

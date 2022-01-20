@@ -31,10 +31,10 @@ extern __host__ __device__ float objectRadiance(float ifov, float distance, floa
                                                 float solar_coeff, float ocean_coeff,
                                                 float sky_coeff, float object_coeff,
                                                 float path_coeff);
+extern __host__ __device__ void CheckPoint(int idx);
 
 bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine);
 void printObjStatus(ObjStatus * obj, int numLine);
 void printSeekerInfo(SeekerInfo * obj, int numLine);
 void genRandomMat(cv::Mat src);
-extern __host__ __device__ void CheckPoint(int idx);
 #endif

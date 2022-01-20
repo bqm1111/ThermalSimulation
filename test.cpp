@@ -20,8 +20,8 @@ void testReadFromFile()
 
         free(hPtr);
         gpuErrChk(cudaFree(dPtr));
-
 }
+
 bool checkEqual(float * src1, float *src2, int width, int height)
 {
     for(int y = 0; y < height; y++)
