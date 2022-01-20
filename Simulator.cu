@@ -87,24 +87,6 @@ __device__ float2 cudaImageModel(ObjStatus *missile, GPS target_gps,
 //            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
 //}
 
-//// Output: surface_gps, surface_imgPos
-//__global__ void cudaCalcSurfaceData(GPS* surface_gps,
-//                               float2* surface_imgPos,
-//                               float3* surface_vertices_index, GPS* vertice_gps,
-//                               float2* vertice_imgPos, int num_surfaces)
-//{
-//    int idx = threadIdx.x + IMUL(blockDim.x, blockIdx.x);
-//    if(idx < num_surfaces)
-//    {
-//        surface_gps[idx] =
-//    }
-//}
-
-void Simulator::calcSurfaceData()
-{
-    int numBlock = (m_ship.num_surfaces + threadsPerBlock - 1) / threadsPerBlock;
-    gpuErrChk(cudaDeviceSynchronize());
-}
 
 __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
                                    float3 * ship_vertices, ObjStatus *missile_cur, ObjStatus *target_cur,
@@ -297,6 +279,8 @@ __global__ void cudaCalcDistance(RayInfo *distance,
                                  float3 *ship_faces,
                                  float2 *shipImgPos,
                                  GPS *ship_gps,
+                                 GPS3 * ship_surface_gps,
+                                 float6 * ship_surface_imgPos,
                                  ObjStatus* missile_cur,
                                  float * Rb2c_cur, float *Ri2b_missile_cur,
                                  float * Re2i_missile, float fov_pixel,
@@ -333,14 +317,14 @@ __global__ void cudaCalcDistance(RayInfo *distance,
         // It is not easy to avoid since it require random data access pattern
         // A possible solution is to reorganize input data
         float2 surface_imgPos[3];
-        surface_imgPos[0] = shipImgPos[(int)ship_faces[faceIdx].x];
-        surface_imgPos[1] = shipImgPos[(int)ship_faces[faceIdx].y];
-        surface_imgPos[2] = shipImgPos[(int)ship_faces[faceIdx].z];
+        surface_imgPos[0] = ship_surface_imgPos[faceIdx].x;
+        surface_imgPos[1] = ship_surface_imgPos[faceIdx].y;
+        surface_imgPos[2] = ship_surface_imgPos[faceIdx].z;
 
         GPS surface_gps[3];
-        surface_gps[0] = ship_gps[(int)ship_faces[faceIdx].x];
-        surface_gps[1] = ship_gps[(int)ship_faces[faceIdx].y];
-        surface_gps[2] = ship_gps[(int)ship_faces[faceIdx].z];
+        surface_gps[0] = ship_surface_gps[faceIdx].x;
+        surface_gps[1] = ship_surface_gps[faceIdx].y;
+        surface_gps[2] = ship_surface_gps[faceIdx].z;
 
         float NED[3];
         calcNED(&NED[0], imgPos, Rb2c_cur, Ri2b_missile_cur, Re2i_missile, fov_pixel);
@@ -367,8 +351,8 @@ void Simulator::calcDistance(int offset, ObjStatus * missile_cur)
     dim3 gridDim(ceil((float)num_partialPix / threadsPerBlock),
                  ceil((float)num_surfaces / threadsPerBlock));
 
-
-    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.surfaces,m_ship.imgPos, m_ship.gps, missile_cur,
+    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.surfaces,m_ship.imgPos, m_ship.gps,m_ship.surface_gps,
+                                            m_ship.surface_imgPos, missile_cur,
                                             m_Rb2c_cur, m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel,
                                             num_surfaces, num_partialPix, offset, m_batch_size, m_width, m_height);
     gpuErrChk(cudaDeviceSynchronize());

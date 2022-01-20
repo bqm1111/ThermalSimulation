@@ -17,6 +17,20 @@ struct GPS {
     float longtitude;
     float height;
 };
+
+struct GPS3 {
+    GPS x;
+    GPS y;
+    GPS z;
+};
+
+struct float6
+{
+    float2 x;
+    float2 y;
+    float2 z;
+};
+
 struct RotationAngle
 {
     __host__ __device__ RotationAngle(float r = 0, float p = 0, float y = 0)
@@ -116,8 +130,8 @@ struct ShipInfo
     GPS *gps;               // gps data of each vertex
     float2 *imgPos;          // pixel position of each vertex when projecting onto the image
 
-    GPS * surface_gps;
-    float2 * surface_imgPos;
+    GPS3 * surface_gps;
+    float6 * surface_imgPos;
 
     float length;      // length of the ship
     float height;      // height of the ship

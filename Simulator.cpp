@@ -84,12 +84,12 @@ void Simulator::init()
     gpuErrChk(cudaMalloc((void**)&m_missile, m_totalFrame * sizeof(ObjStatus)));
     gpuErrChk(cudaMalloc((void**)&m_target, m_totalFrame * sizeof(ObjStatus)));
     gpuErrChk(cudaMalloc((void**)&m_seeker, m_totalFrame * sizeof(SeekerInfo)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.surfaces, m_ship.num_surfaces * sizeof(float3)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.vertices, m_ship.num_vertices *sizeof(float3)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.gps, m_ship.num_vertices *sizeof(float3)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.imgPos, m_ship.num_vertices *sizeof(float3)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.surface_gps, m_ship.num_surfaces * 3 * sizeof(GPS)));
-    gpuErrChk(cudaMalloc((void**)&m_ship.surface_imgPos, m_ship.num_surfaces * 3 * sizeof(float2)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.surfaces, m_ship.num_surfaces * sizeof(float3)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.vertices, m_ship.num_vertices *sizeof(float3)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.gps, m_ship.num_vertices *sizeof(GPS)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.imgPos, m_ship.num_vertices *sizeof(float2)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.surface_gps, m_ship.num_surfaces * sizeof(GPS3)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.surface_imgPos, m_ship.num_surfaces * sizeof(float6)));
 
 
     // Allocate core data for rendering image
@@ -135,6 +135,22 @@ Simulator::~Simulator()
     gpuErrChk(cudaFree(m_Re2i_target));
 }
 
+// Reorganizing input data to avoid uncoalesed data access pattern.
+// Each element in surface_gps contain 3 gps data of 3 vertices contructing that surface
+void Simulator::calcSurfaceData()
+{
+    for(int i = 0; i < m_ship.num_surfaces; i++)
+    {
+        m_ship.surface_gps[i].x = m_ship.gps[(int)(m_ship.surfaces->x)];
+        m_ship.surface_gps[i].y = m_ship.gps[(int)(m_ship.surfaces->y)];
+        m_ship.surface_gps[i].z = m_ship.gps[(int)(m_ship.surfaces->z)];
+
+        m_ship.surface_imgPos[i].x = m_ship.imgPos[(int)(m_ship.surfaces->x)];
+        m_ship.surface_imgPos[i].y = m_ship.imgPos[(int)(m_ship.surfaces->y)];
+        m_ship.surface_imgPos[i].z = m_ship.imgPos[(int)(m_ship.surfaces->z)];
+    }
+}
+
 void Simulator::run()
 {
     for(int i = 0; i < m_fps * m_duration; i++)
@@ -147,7 +163,6 @@ void Simulator::run()
         gpuErrChk(cudaMalloc((void**)&target_prev, sizeof(ObjStatus)));
         gpuErrChk(cudaMalloc((void**)&seeker_cur, sizeof(SeekerInfo)));
         gpuErrChk(cudaMalloc((void**)&seeker_prev, sizeof(SeekerInfo)));
-
 
         gpuErrChk(cudaMemcpy(missile_cur, m_missile + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
         gpuErrChk(cudaMemcpy(target_cur, m_target + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
@@ -165,11 +180,15 @@ void Simulator::run()
             gpuErrChk(cudaMemcpy(target_prev, m_target + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
             gpuErrChk(cudaMemcpy(seeker_prev, m_seeker + m_current_img_id, sizeof(SeekerInfo), cudaMemcpyDeviceToDevice));
         }
+
         calcTranformationMatrices(missile_cur, missile_prev, target_cur, target_prev,
                                   seeker_cur, seeker_prev);
         printf("Calculate Transformation Matrices: DONE !!!\n");
         convertToImage(missile_cur, target_cur);
         printf("Convert To Image: DONE!!!\n");
+        calcSurfaceData();
+        printf("Calculate SurfaceData: DONE!!!\n");
+
         for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
         {
             printf("Rendering image part %d\n", offset);
