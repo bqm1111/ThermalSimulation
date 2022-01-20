@@ -36,13 +36,13 @@ __device__ bool isInsideSurface(float2* data, int length_data, float2 imgPos)
     }
 }
 
-__device__ float2 cudaImageModel(ObjStatus missile, GPS target_gps,
+__device__ float2 cudaImageModel(ObjStatus *missile, GPS target_gps,
                                  float * Rb2c_cur, float *Ri2b_missile_cur,
                                  float * Re2i_missile, float fov_pixel)
 {
     float2 result;
     Coordinate target_pos = Geoditic2ECEF(target_gps);
-    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+    Coordinate missile_pos = Geoditic2ECEF(missile->gps);
     float distance = sqrtf((missile_pos.x - target_pos.x) * (missile_pos.x - target_pos.x) +
                            (missile_pos.y - target_pos.y) * (missile_pos.y - target_pos.y) +
                            (missile_pos.z - target_pos.z) * (missile_pos.z - target_pos.z));
@@ -67,28 +67,47 @@ __device__ float2 cudaImageModel(ObjStatus missile, GPS target_gps,
     return  result;
 }
 
-__device__ bool Simulator::isShipAppear()
+//__device__ bool Simulator::isShipAppear()
+//{
+//    ObjStatus missile = m_missile[m_current_img_id];
+//    ObjStatus target = m_target[m_current_img_id];
+//    float2 target_imgPos = cudaImageModel(missile, target.gps, m_Rb2c_cur,
+//                                          m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel);
+//    Coordinate target_pos = Geoditic2ECEF(target.gps);
+//    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+
+//    float distance = (target_pos - missile_pos).norm();
+
+//    float delta_az = asinf(target_imgPos.x / sqrtf(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
+//    float delta_el = asinf(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
+//    //    float delta_u0 = atan(m_ship.length / distance) * f;
+//    //    float delta_w0 = atan(m_ship.height / distance) * f;
+
+//    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
+//            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
+//}
+
+//// Output: surface_gps, surface_imgPos
+//__global__ void cudaCalcSurfaceData(GPS* surface_gps,
+//                               float2* surface_imgPos,
+//                               float3* surface_vertices_index, GPS* vertice_gps,
+//                               float2* vertice_imgPos, int num_surfaces)
+//{
+//    int idx = threadIdx.x + IMUL(blockDim.x, blockIdx.x);
+//    if(idx < num_surfaces)
+//    {
+//        surface_gps[idx] =
+//    }
+//}
+
+void Simulator::calcSurfaceData()
 {
-    ObjStatus missile = m_missile[m_current_img_id];
-    ObjStatus target = m_target[m_current_img_id];
-    float2 target_imgPos = cudaImageModel(missile, target.gps, m_Rb2c_cur,
-                                          m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel);
-    Coordinate target_pos = Geoditic2ECEF(target.gps);
-    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
-
-    float distance = (target_pos - missile_pos).norm();
-
-    float delta_az = asinf(target_imgPos.x / sqrtf(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
-    float delta_el = asinf(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
-    //    float delta_u0 = atan(m_ship.length / distance) * f;
-    //    float delta_w0 = atan(m_ship.height / distance) * f;
-
-    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
-            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
+    int numBlock = (m_ship.num_surfaces + threadsPerBlock - 1) / threadsPerBlock;
+    gpuErrChk(cudaDeviceSynchronize());
 }
 
 __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
-                                   float3 * ship_vertices, ObjStatus missile, ObjStatus target,
+                                   float3 * ship_vertices, ObjStatus *missile_cur, ObjStatus *target_cur,
                                    float *Rb2c_cur, float *Ri2b_missile_cur,
                                    float *Re2i_missile,
                                    float *Ri2b_target, float * Re2i_target,
@@ -106,19 +125,19 @@ __global__ void cudaConvertToImage(GPS * ship_gps, float2 * shipImgPos,
         float NED[3];
         mul3x3TransposeFirst(&temp[0], Re2i_target, Ri2b_target);
         mul3x3ToVec3x1(&NED[0], temp, vertex);
-        Coordinate tmp = Geoditic2ECEF(target.gps) + Coordinate(NED[0], NED[1], NED[2]);
+        Coordinate tmp = Geoditic2ECEF(target_cur->gps) + Coordinate(NED[0], NED[1], NED[2]);
         ship_gps[idx] = ECEF2Geoditic(tmp);
-        shipImgPos[idx] = cudaImageModel(missile,ship_gps[idx], Rb2c_cur,
+        shipImgPos[idx] = cudaImageModel(missile_cur,ship_gps[idx], Rb2c_cur,
                                          Ri2b_missile_cur, Re2i_missile, fov_pixel);
     }
 }
 
-void Simulator::convertToImage()
+void Simulator::convertToImage(ObjStatus* missile_cur, ObjStatus *target_cur)
 {
     int numBlock = (m_ship.num_vertices + threadsPerBlock - 1) / threadsPerBlock;
     cudaConvertToImage<<<numBlock, threadsPerBlock>>>(m_ship.gps, m_ship.imgPos,
-                                                      m_ship.vertices, m_missile[m_current_img_id],
-                                                      m_target[m_current_img_id],
+                                                      m_ship.vertices, missile_cur,
+                                                      target_cur,
                                                       m_Rb2c_cur, m_Ri2b_missile_cur,
                                                       m_Re2i_missile,
                                                       m_Ri2b_target,
@@ -278,7 +297,7 @@ __global__ void cudaCalcDistance(RayInfo *distance,
                                  float3 *ship_faces,
                                  float2 *shipImgPos,
                                  GPS *ship_gps,
-                                 Coordinate missile_pos,
+                                 ObjStatus* missile_cur,
                                  float * Rb2c_cur, float *Ri2b_missile_cur,
                                  float * Re2i_missile, float fov_pixel,
                                  int num_faces, int num_partialPix, int offset,
@@ -303,6 +322,7 @@ __global__ void cudaCalcDistance(RayInfo *distance,
 
     if(faceIdx < num_faces && partialPixIdx < num_partialPix)
     {
+        Coordinate missile_pos = Geoditic2ECEF(missile_cur->gps);
         float u = col + (float)(partialPixIdx_X - 0.5)/ PIXEL_GRID_SIZE - width / 2 - 0.5;
         float w = row + (float)(partialPixIdx_Y - 0.5)/ PIXEL_GRID_SIZE - height / 2 - 0.5;
         float2 imgPos;
@@ -337,9 +357,8 @@ __global__ void cudaCalcDistance(RayInfo *distance,
     }
 }
 
-void Simulator::calcDistance(int offset)
+void Simulator::calcDistance(int offset, ObjStatus * missile_cur)
 {
-    Coordinate missile_pos = Geoditic2ECEF(m_missile[m_current_img_id].gps);
     int num_partialPix = m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE;
     int num_surfaces = m_ship.num_surfaces;
 
@@ -349,7 +368,7 @@ void Simulator::calcDistance(int offset)
                  ceil((float)num_surfaces / threadsPerBlock));
 
 
-    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.surfaces,m_ship.imgPos, m_ship.gps, missile_pos,
+    cudaCalcDistance<<<gridDim, blockDim>>>(m_ray, m_ship.surfaces,m_ship.imgPos, m_ship.gps, missile_cur,
                                             m_Rb2c_cur, m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel,
                                             num_surfaces, num_partialPix, offset, m_batch_size, m_width, m_height);
     gpuErrChk(cudaDeviceSynchronize());
@@ -369,7 +388,6 @@ __global__ void cudaCalcRadiance(RayInfo *distance,
         bool hitObj = false;
         float minDist = 100000000;
         int hitSurfaceIdx;
-        float e;
 #pragma unroll
         for(int i = 0; i < num_surfaces; i++)
         {
@@ -412,7 +430,7 @@ void Simulator::calcRadiance(int offset)
 {
     float ifov = m_fov / m_width;
     int numBlock = (m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE + threadsPerBlock * threadsPerBlock - 1) /(threadsPerBlock * threadsPerBlock);
-    cudaCalcRadiance<<<numBlock, threadsPerBlock * threadsPerBlock>>>(m_ray, m_radiance, m_ship.num_surfaces, m_batch_size, ifov,
+    cudaCalcRadiance<<<numBlock, threadsPerBlock * threadsPerBlock>>>(m_ray, m_partialRadiance, m_ship.num_surfaces, m_batch_size, ifov,
                      m_solar_coeff, m_ocean_coeff, m_sky_coeff, m_object_coeff, m_horizon_coeff);
     gpuErrChk(cudaDeviceSynchronize());
 
@@ -430,7 +448,7 @@ __global__ void cudaRenderPartialImg(unsigned char * renderedImg, float * radian
             tmp = tmp + radiance[idx * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE + i];
         }
         int imgIdx = offset * batch_size + idx;
-        renderedImg[imgIdx] = (unsigned char)(tmp / (PIXEL_GRID_SIZE * PIXEL_GRID_SIZE) * 0.6 * powf(10, 8) / powf(fov, 2));
+        renderedImg[imgIdx] = (unsigned char)(tmp / (PIXEL_GRID_SIZE * PIXEL_GRID_SIZE) * 0.6 * powf(10, 8) * 255/ powf(fov, 2));
         if(renderedImg[imgIdx] > 255)
         {
             renderedImg[imgIdx] = 255;
@@ -441,37 +459,68 @@ __global__ void cudaRenderPartialImg(unsigned char * renderedImg, float * radian
 void Simulator::renderPartialImg(int offset)
 {
 
-    cudaRenderPartialImg<<<m_batch_size, PIXEL_GRID_SIZE * PIXEL_GRID_SIZE>>>(m_renderedImg, m_radiance, m_fov, offset, m_batch_size);
+    cudaRenderPartialImg<<<m_batch_size, PIXEL_GRID_SIZE * PIXEL_GRID_SIZE>>>(m_renderedImg, m_partialRadiance, m_fov, offset, m_batch_size);
     gpuErrChk(cudaDeviceSynchronize());
 }
 
-void Simulator::calcTranformationMatrices()
+__global__ void calcTranformationMatricesHelper(ObjStatus* missile_cur,
+                                                ObjStatus* missile_prev,
+                                                ObjStatus* target_cur,
+                                                ObjStatus* target_prev,
+                                                SeekerInfo* seeker_cur,
+                                                SeekerInfo* seeker_prev,
+                                                int current_img_id,
+                                                float* Rb2c_cur, float* Ri2b_missile_cur,
+                                                float* Re2i_missile,
+                                                float* Ri2b_target,
+                                                float* Re2i_target,
+                                                float* Rb2c_prev,
+                                                float* Ri2b_missile_prev)
 {
-    ObjStatus missile_cur = m_missile[m_current_img_id];
-    ObjStatus target_cur = m_target[m_current_img_id];
-    SeekerInfo seeker_cur = m_seeker[m_current_img_id];
-    ObjStatus missile_prev;
-    ObjStatus target_prev;
-    SeekerInfo seeker_prev;
-
-    if(m_current_img_id > 0)
-    {
-        missile_prev = m_missile[m_current_img_id - 1];
-        target_prev = m_target[m_current_img_id - 1];
-        seeker_prev = m_seeker[m_current_img_id - 1];
-    }
-    else {
-        missile_prev = m_missile[m_current_img_id];
-        target_prev = m_target[m_current_img_id];
-        seeker_prev = m_seeker[m_current_img_id];
-    }
-
-    getRb2cMatrix(m_Rb2c_cur, RotationAngle(0, seeker_cur.elevation, seeker_cur.azimuth));
-    getRb2cMatrix(m_Rb2c_prev, RotationAngle(0, seeker_prev.elevation, seeker_prev.azimuth));
-    getRi2bMatrix(m_Ri2b_missile_cur, missile_cur.angle);
-    getRi2bMatrix(m_Ri2b_missile_prev, missile_prev.angle);
-    getRi2bMatrix(m_Ri2b_target, target_cur.angle);
-    getRe2iMatrix(m_Re2i_missile, missile_cur.gps);
-    getRe2iMatrix(m_Re2i_target, target_cur.gps);
+    getRb2cMatrix(Rb2c_cur, RotationAngle(0, seeker_cur->elevation, seeker_cur->azimuth));
+    getRb2cMatrix(Rb2c_prev, RotationAngle(0, seeker_prev->elevation, seeker_prev->azimuth));
+    getRi2bMatrix(Ri2b_missile_cur, missile_cur->angle);
+    getRi2bMatrix(Ri2b_missile_prev, missile_prev->angle);
+    getRi2bMatrix(Ri2b_target, target_cur->angle);
+    getRe2iMatrix(Re2i_missile, missile_cur->gps);
+    getRe2iMatrix(Re2i_target, target_cur->gps);
 }
 
+void Simulator::calcTranformationMatrices(ObjStatus* missile_cur, ObjStatus* missile_prev,
+                                          ObjStatus *target_cur, ObjStatus* target_prev,
+                                          SeekerInfo* seeker_cur, SeekerInfo* seeker_prev)
+{
+    calcTranformationMatricesHelper<<<1, 1>>>(missile_cur, missile_prev,target_cur, target_prev,
+                                              seeker_cur, seeker_prev, m_current_img_id,
+                                    m_Rb2c_cur,m_Ri2b_missile_cur,
+                                    m_Re2i_missile, m_Ri2b_target,m_Re2i_target,
+                                    m_Rb2c_prev, m_Ri2b_missile_prev);
+}
+//void Simulator::calcTranformationMatrices()
+//{
+//    ObjStatus missile_cur = m_missile[m_current_img_id];
+//    ObjStatus target_cur = m_target[m_current_img_id];
+//    SeekerInfo seeker_cur = m_seeker[m_current_img_id];
+//    ObjStatus missile_prev;
+//    ObjStatus target_prev;
+//    SeekerInfo seeker_prev;
+//    CheckPoint(1);
+//    if(m_current_img_id > 0)
+//    {
+//        missile_prev = m_missile[m_current_img_id - 1];
+//        target_prev = m_target[m_current_img_id - 1];
+//        seeker_prev = m_seeker[m_current_img_id - 1];
+//    }
+//    else {
+//        missile_prev = m_missile[m_current_img_id];
+//        target_prev = m_target[m_current_img_id];
+//        seeker_prev = m_seeker[m_current_img_id];
+//    }
+//    getRb2cMatrix(m_Rb2c_cur, RotationAngle(0, seeker_cur.elevation, seeker_cur.azimuth));
+//    getRb2cMatrix(m_Rb2c_prev, RotationAngle(0, seeker_prev.elevation, seeker_prev.azimuth));
+//    getRi2bMatrix(m_Ri2b_missile_cur, missile_cur.angle);
+//    getRi2bMatrix(m_Ri2b_missile_prev, missile_prev.angle);
+//    getRi2bMatrix(m_Ri2b_target, target_cur.angle);
+//    getRe2iMatrix(m_Re2i_missile, missile_cur.gps);
+//    getRe2iMatrix(m_Re2i_target, target_cur.gps);
+//}

@@ -116,6 +116,9 @@ struct ShipInfo
     GPS *gps;               // gps data of each vertex
     float2 *imgPos;          // pixel position of each vertex when projecting onto the image
 
+    GPS * surface_gps;
+    float2 * surface_imgPos;
+
     float length;      // length of the ship
     float height;      // height of the ship
 };

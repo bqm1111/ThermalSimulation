@@ -235,6 +235,7 @@ __host__ __device__ Coordinate Geoditic2ECEF(GPS gps)
     result.z = (gps.height + (1 - e_sq) * N) * sinf(lambda);
     return result;
 }
+
 __host__ __device__ float objectRadiance(float ifov, float distance, float beta,
                                          float solar_coeff, float ocean_coeff,
                                          float sky_coeff, float object_coeff,

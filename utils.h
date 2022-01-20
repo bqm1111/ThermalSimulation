@@ -36,4 +36,5 @@ bool readFromFile(std::string filename, float *arr, int numLine, int numPerLine)
 void printObjStatus(ObjStatus * obj, int numLine);
 void printSeekerInfo(SeekerInfo * obj, int numLine);
 void genRandomMat(cv::Mat src);
+extern __host__ __device__ void CheckPoint(int idx);
 #endif

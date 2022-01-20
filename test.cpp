@@ -2,7 +2,7 @@
 
 void testSimulator()
 {
-    Simulator simulator;
+    Simulator simulator(30, 150, 256);
     simulator.init();
     simulator.loadData();
     simulator.run();
@@ -39,7 +39,6 @@ bool checkEqual(float * src1, float *src2, int width, int height)
     std::cout << "*** MATCH ***" << std::endl;
     return true;
 }
-
 
 void testMul3x3()
 {

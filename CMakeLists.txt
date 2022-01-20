@@ -14,7 +14,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 find_package(CUDA REQUIRED)
 set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 CACHE STRING "CUDA architectures")
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_STANDARD 11)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -rdc=true --compiler-options -fno-strict-aliasing --ptxas-options=-v --generate-line-info")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -rdc=true --compiler-options -fno-strict-aliasing --generate-line-info")
 
 include_directories(${CUDA_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})

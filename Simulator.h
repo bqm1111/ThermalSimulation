@@ -27,12 +27,16 @@ private:
     int m_fps;
     int m_duration;
     int m_totalFrame;
-    void convertToImage();
-    void calcTranformationMatrices();
-    void calcDistance(int offset);
+    void convertToImage(ObjStatus* missile_cur, ObjStatus *target_cur);
+    void calcSurfaceData();
+    void calcTranformationMatrices(ObjStatus* missile_cur, ObjStatus* missile_prev,
+                                   ObjStatus *target_cur, ObjStatus* target_prev,
+                                   SeekerInfo* seeker_cur, SeekerInfo* seeker_prev);
+    void calcDistance(int offset, ObjStatus * missile_cur);
     void calcRadiance(int offset);
     void renderPartialImg(int offset);
     bool isShipAppear();
+    void renderSingleImg();
 
     // thermal parameter
     float m_ocean_coeff;           // radiance coefficient of the ocean
@@ -59,8 +63,6 @@ private:
     // Core data for rendering image
     RayInfo * m_ray;
     float * m_partialRadiance;
-    float * m_radiance;
-
     unsigned char * m_renderedImg;
     int m_batch_size;
 
