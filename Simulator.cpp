@@ -180,6 +180,7 @@ void Simulator::run()
             gpuErrChk(cudaMemcpy(target_prev, m_target + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
             gpuErrChk(cudaMemcpy(seeker_prev, m_seeker + m_current_img_id, sizeof(SeekerInfo), cudaMemcpyDeviceToDevice));
         }
+
         printf("****** Start rendering image #%d ******\n", m_current_img_id + 1);
         calcTranformationMatrices(missile_cur, missile_prev, target_cur, target_prev,
                                   seeker_cur, seeker_prev);
@@ -190,6 +191,7 @@ void Simulator::run()
         printf("Calculate SurfaceData: DONE!!!\n");
 
         for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
+//        for(int offset = 0; offset < 1; offset++)
         {
             printf("Rendering image part %d\n", offset);
 

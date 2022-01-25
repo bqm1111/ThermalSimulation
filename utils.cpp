@@ -75,7 +75,37 @@ void genRandomMat(cv::Mat src)
     }
 }
 
-__host__ __device__ void CheckPoint(int idx)
+__device__ __host__ void CheckPoint(int idx)
 {
     printf("Check point %d\n", idx);
 }
+void printMat(float * data, int width, int height)
+{
+    for(int y = 0; y < height; y++)
+    {
+        for(int x = 0; x < width; x++)
+        {
+            printf("%f\t", data[y * width + x]);
+        }
+        printf("\n");
+    }
+}
+
+void printDevicePtr(float *arr, int width, int height)
+{
+    float* h_ptr = (float*)malloc(width * height * sizeof(float));
+    gpuErrChk(cudaMemcpy(h_ptr, arr, width * height * sizeof(float), cudaMemcpyDeviceToHost));
+    printMat(h_ptr, width, height);
+    free(h_ptr);
+}
+
+void dev2Host(float * dst, float *src, int size)
+{
+    gpuErrChk(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost));
+}
+
+void host2Dev(float* dst, float *src, int size)
+{
+    gpuErrChk(cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice));
+}
+

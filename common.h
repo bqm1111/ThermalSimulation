@@ -13,6 +13,17 @@ enum DataType
 };
 
 struct GPS {
+    __device__ __host__ GPS(float lat = 0, float lon = 0, float h = 0)
+    {
+        latitude = lat;
+        longtitude = lon;
+        height = h;
+    }
+    __device__ __host__ void print(char *str)
+    {
+        printf("%s: %f - %f - %f\n", str, latitude, longtitude, height);
+    }
+
     float latitude;
     float longtitude;
     float height;
@@ -33,12 +44,17 @@ struct float6
 
 struct RotationAngle
 {
-    __host__ __device__ RotationAngle(float r = 0, float p = 0, float y = 0)
+    __device__ __host__ RotationAngle(float r = 0, float p = 0, float y = 0)
     {
         roll = r;
         pitch = p;
         yaw = y;
     }
+    __device__ __host__ void print(char *str)
+    {
+        printf("%s: %f - %f - %f\n", str, roll, pitch, yaw);
+    }
+
     float roll;
     float pitch;
     float yaw;
@@ -46,38 +62,38 @@ struct RotationAngle
 
 struct Coordinate
 {
-    __host__ __device__ Coordinate(float x_ = 0, float y_ = 0, float z_= 0)
+    __device__ __host__ Coordinate(float x_ = 0, float y_ = 0, float z_= 0)
     {
         x = x_;
         y = y_;
         z = z_;
     }
-    __host__ __device__ float norm()
+    __device__ __host__ float norm()
     {
-        return std::sqrt(x * x + y * y + z * z);
+        return sqrtf(x * x + y * y + z * z);
     }
 
-    __host__ __device__ Coordinate operator -(const Coordinate & coor)
+    __device__ __host__ Coordinate operator -(const Coordinate & coor)
     {
         return Coordinate(x - coor.x, y - coor.y, z - coor.z);
     }
 
-    __host__ __device__ Coordinate operator +(const Coordinate & coor)
+    __device__ __host__ Coordinate operator +(const Coordinate & coor)
     {
         return Coordinate(x + coor.x, y + coor.y, z + coor.z);
     }
 
-    __host__ __device__ float operator *(const Coordinate & coor)
+    __device__ __host__ float operator *(const Coordinate & coor)
     {
         return (x * coor.x + y * coor.y + z * coor.z);
     }
 
-    __host__ __device__ Coordinate operator *(const float s)
+    __device__ __host__ Coordinate operator *(const float s)
     {
         return Coordinate(x * s, y * s, z * s);
     }
 
-    __host__ __device__ Coordinate operator /(const float s)
+    __device__ __host__ Coordinate operator /(const float s)
     {
         if(s==0)
         {
@@ -93,13 +109,19 @@ struct Coordinate
 
 struct ObjStatus
 {
+    __device__ __host__ ObjStatus(GPS gps_, RotationAngle angle_)
+    {
+        gps = gps_;
+        angle = angle_;
+    }
+
     GPS gps;
     RotationAngle angle;
 };
 
 struct RayInfo
 {
-    __host__ __device__ RayInfo(float distance_, float angle_, int objIdx_)
+    __device__ __host__ RayInfo(float distance_, float angle_, int objIdx_)
     {
         distance = distance_;
         angle = angle_;
@@ -113,6 +135,11 @@ struct RayInfo
 
 struct SeekerInfo
 {
+    __device__ __host__ SeekerInfo(float az, float ele)
+    {
+        azimuth = az;
+        elevation = ele;
+    }
     float azimuth;
     float elevation;
 };

@@ -6,4 +6,5 @@ int main(int argc, char **argv)
     testSimulator();
 //    testReadFromFile();
 //    testMul3x3();
+//    testCalcTransformationMatrices();
 }
