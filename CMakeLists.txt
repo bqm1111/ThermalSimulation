@@ -8,13 +8,13 @@ file(GLOB SOURCES ${PROJECT_SOURCE_DIR}/*.cpp
                   ${PROJECT_SOURCE_DIR}/*.cu)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # cuda
 find_package(CUDA REQUIRED)
 set(CMAKE_CUDA_ARCHITECTURES 61 CACHE STRING "CUDA architectures")
 set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_STANDARD 11)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -rdc=true --compiler-options -fno-strict-aliasing --ptxas-options=-v --generate-line-info")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 --compiler-options -fno-strict-aliasing --ptxas-options=-v --generate-line-info")
 
 include_directories(${CUDA_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${CUDA_LIBRARIES})

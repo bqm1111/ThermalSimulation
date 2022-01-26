@@ -7,7 +7,7 @@ Simulator::Simulator(int fps, int duration, int batch_size):
     m_width = 640;
     m_height = 480;
     m_fov = 3.7;
-    m_fov_pixel = m_width / 2 / tan(deg2rad(m_fov / 2));
+    m_fov_pixel = m_width / 2 / tan(m_fov / 2 * M_PI / 180);
     m_current_img_id = 0;
 
     // thermal parameter
@@ -153,7 +153,7 @@ void Simulator::calcSurfaceData()
 
 void Simulator::run()
 {
-    for(int i = 0; i < m_fps * m_duration; i++)
+    for(int m_current_img_id = 20; m_current_img_id < m_fps * m_duration; m_current_img_id++)
     {
         ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
         SeekerInfo * seeker_cur, *seeker_prev;
@@ -203,7 +203,6 @@ void Simulator::run()
         gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
         cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + ".jpg", img);
 //        cv::waitKey(2);
-        m_current_img_id++;
         gpuErrChk(cudaFree(missile_cur));
         gpuErrChk(cudaFree(target_cur));
         gpuErrChk(cudaFree(missile_prev));

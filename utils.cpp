@@ -75,7 +75,7 @@ void genRandomMat(cv::Mat src)
     }
 }
 
-__device__ __host__ void CheckPoint(int idx)
+__device__ void CheckPoint(int idx)
 {
     printf("Check point %d\n", idx);
 }
