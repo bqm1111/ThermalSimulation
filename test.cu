@@ -38,3 +38,31 @@
 //                                              Re2i_missile, Ri2b_target,Re2i_target,
 //                                              Rb2c_prev, Ri2b_missile_prev);
 //}
+
+
+//__global__ void cudaTestRayInfo(RayInfo* dst, int width, int height)
+//{
+//    int row = threadIdx.y + IMUL(blockIdx.y, blockDim.y);
+//    int col = threadIdx.x + IMUL(blockIdx.x, blockDim.x);
+
+//    if(row < height && col < width)
+//    {
+//        int idx = row * width + height;
+//        dst[idx].angle = -1;
+//        dst[idx].distance = -1;
+//        dst[idx].objIdx = 0;
+//    }
+//}
+
+//void testRayInfo()
+//{
+//    RayInfo * ray;
+//    int width = 640;
+//    int height = 480;
+//    gpuErrChk(cudaMalloc((void**)&ray, width * height * sizeof(RayInfo)));
+
+//    dim3 blockDim(16, 16);
+//    dim3 gridDim(width / 16, height /16);
+//    cudaTestRayInfo<<<gridDim, blockDim>>>(ray, width, height);
+//    gpuErrChk(cudaFree(ray));
+//}

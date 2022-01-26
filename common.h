@@ -121,16 +121,9 @@ struct ObjStatus
 
 struct RayInfo
 {
-    __device__ RayInfo(float distance_, float angle_, int objIdx_)
-    {
-        distance = distance_;
-        angle = angle_;
-        objIdx = objIdx_;
-    }
-
-    float distance;
-    float angle;
-    int objIdx;    // 0: sky  1: ocean 2: object
+    float *distance;
+    float *angle;
+    int *objIdx;    // 0: sky  1: ocean 2: object
 };
 
 struct SeekerInfo

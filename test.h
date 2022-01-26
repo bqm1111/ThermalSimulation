@@ -18,4 +18,5 @@ void calcTransMatrix(ObjStatus* missile_cur, ObjStatus* missile_prev,
                      float* Re2i_target,
                      float* Rb2c_prev,
                      float* Ri2b_missile_prev);
+void testRayInfo();
 #endif

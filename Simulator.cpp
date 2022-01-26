@@ -93,7 +93,13 @@ void Simulator::init()
 
 
     // Allocate core data for rendering image
-    gpuErrChk(cudaMalloc((void**)&m_ray, grid_size * sizeof(RayInfo)));
+//    gpuErrChk(cudaMalloc((void**)&m_ray, grid_size * sizeof(RayInfo)));
+    gpuErrChk(cudaMalloc((void**)&(m_ray.angle), grid_size * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&(m_ray.distance), grid_size * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&(m_ray.objIdx), grid_size * sizeof(int)));
+
+
+
     gpuErrChk(cudaMalloc((void**)&m_partialRadiance, m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE * sizeof(float)));
     gpuErrChk(cudaMalloc((void**)&m_renderedImg, m_width * m_height * sizeof(unsigned char)));
 
@@ -121,7 +127,11 @@ Simulator::~Simulator()
     gpuErrChk(cudaFree(m_ship.surface_imgPos));
 
     // Free core data for rendering image
-    gpuErrChk(cudaFree(m_ray));
+//    gpuErrChk(cudaFree(m_ray));
+    gpuErrChk(cudaFree(m_ray.angle));
+    gpuErrChk(cudaFree(m_ray.distance));
+    gpuErrChk(cudaFree(m_ray.objIdx));
+
     gpuErrChk(cudaFree(m_partialRadiance));
     gpuErrChk(cudaFree(m_renderedImg));
 
@@ -153,7 +163,7 @@ void Simulator::calcSurfaceData()
 
 void Simulator::run()
 {
-    for(int m_current_img_id = 20; m_current_img_id < m_fps * m_duration; m_current_img_id++)
+    for(int m_current_img_id = 20; m_current_img_id < 21; m_current_img_id++)
     {
         ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
         SeekerInfo * seeker_cur, *seeker_prev;
@@ -190,15 +200,16 @@ void Simulator::run()
         calcSurfaceData();
         printf("Calculate SurfaceData: DONE!!!\n");
 
-        for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
-//        for(int offset = 0; offset < 1; offset++)
+//        for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
+        for(int offset = 0; offset < 1; offset++)
         {
             printf("Rendering image part %d\n", offset);
 
             getExeTime("calcDistance Time = ", calcDistance(offset, missile_cur));
             getExeTime("calcRadiance Time = ", calcRadiance(offset));
-            getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
+//            getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
         }
+
         cv::Mat img(m_height, m_width, CV_8UC1);
         gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
         cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + ".jpg", img);

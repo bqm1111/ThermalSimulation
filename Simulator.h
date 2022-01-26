@@ -61,7 +61,7 @@ private:
     float *m_Re2i_target;       // Matrix transform between earth to inertial(missile)
 
     // Core data for rendering image
-    RayInfo * m_ray;
+    RayInfo m_ray;
     float * m_partialRadiance;
     unsigned char * m_renderedImg;
     int m_batch_size;
