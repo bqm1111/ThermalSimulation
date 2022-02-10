@@ -6,7 +6,7 @@
 #include "vector_types.h"
 #include "opencv2/opencv.hpp"
 
-#define PIXEL_GRID_SIZE     1
+#define PIXEL_GRID_SIZE     8
 
 class Simulator
 {

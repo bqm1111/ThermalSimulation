@@ -164,17 +164,18 @@ void Simulator::calcSurfaceData()
 
 void Simulator::run()
 {
-    auto start = getMoment;
+    ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
+    SeekerInfo * seeker_cur, *seeker_prev;
+    gpuErrChk(cudaMalloc((void**)&missile_cur, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&target_cur, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&missile_prev, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&target_prev, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&seeker_cur, sizeof(SeekerInfo)));
+    gpuErrChk(cudaMalloc((void**)&seeker_prev, sizeof(SeekerInfo)));
+
     for(int m_current_img_id = 0; m_current_img_id < m_fps * m_duration; m_current_img_id++)
     {
-        ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
-        SeekerInfo * seeker_cur, *seeker_prev;
-        gpuErrChk(cudaMalloc((void**)&missile_cur, sizeof(ObjStatus)));
-        gpuErrChk(cudaMalloc((void**)&target_cur, sizeof(ObjStatus)));
-        gpuErrChk(cudaMalloc((void**)&missile_prev, sizeof(ObjStatus)));
-        gpuErrChk(cudaMalloc((void**)&target_prev, sizeof(ObjStatus)));
-        gpuErrChk(cudaMalloc((void**)&seeker_cur, sizeof(SeekerInfo)));
-        gpuErrChk(cudaMalloc((void**)&seeker_prev, sizeof(SeekerInfo)));
+        auto start = getMoment;
 
         gpuErrChk(cudaMemcpy(missile_cur, m_missile + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
         gpuErrChk(cudaMemcpy(target_cur, m_target + m_current_img_id, sizeof(ObjStatus), cudaMemcpyDeviceToDevice));
@@ -204,26 +205,24 @@ void Simulator::run()
 
         for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
         {
-            //            printf("Rendering image part %d\n", offset);
-
-            getExeTime("calcDistance Time = ", calcDistance(offset, missile_cur));
-            getExeTime("calcRadiance Time = ", calcRadiance(offset));
-            getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
+            calcDistance(offset, missile_cur);
+            calcRadiance(offset);
+            renderPartialImg(offset);
         }
 
         cv::Mat img(m_height, m_width, CV_8UC1);
         gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
         cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + ".jpg", img);
-        //        cv::waitKey(2);
-        gpuErrChk(cudaFree(missile_cur));
-        gpuErrChk(cudaFree(target_cur));
-        gpuErrChk(cudaFree(missile_prev));
-        gpuErrChk(cudaFree(target_prev));
-        gpuErrChk(cudaFree(seeker_cur));
-        gpuErrChk(cudaFree(seeker_prev));
+        auto end = getMoment;
+        getTimeElapsed("Elapsed Time = ", end, start);
     }
-    auto end = getMoment;
-    getTimeElapsed("Time = ", end, start);
+
+    gpuErrChk(cudaFree(missile_cur));
+    gpuErrChk(cudaFree(target_cur));
+    gpuErrChk(cudaFree(missile_prev));
+    gpuErrChk(cudaFree(target_prev));
+    gpuErrChk(cudaFree(seeker_cur));
+    gpuErrChk(cudaFree(seeker_prev));
 }
 
 void Simulator::testCalcShipData(ObjStatus * missile, ObjStatus * target)
@@ -261,8 +260,6 @@ void Simulator::testCalcShipData(ObjStatus * missile, ObjStatus * target)
     free(h_ship_face_gps);
     free(h_ship_face_imgPos);
 
-
-
     checkEqual("Test ship_surface_GPS", (double*)ship_surface_gps_gt, (double*)m_ship.surface_gps, 9, m_ship.num_surfaces, false);
     checkEqual("Test ship_surface_imgPos", (double*)ship_surface_imgPos_gt, (double*)m_ship.surface_imgPos, 6, m_ship.num_surfaces, false);
 
@@ -280,9 +277,6 @@ void Simulator::test()
     ObjStatus *target;
     SeekerInfo *seeker;
 
-    //    ObjStatus missile_data(GPS(19.0982, 106.0423, 6.33), RotationAngle(-0.000064, 0.0549, 1.2775));
-    //    ObjStatus target_data(GPS(19.1117, 106.0899, 6), RotationAngle(0, 0, 2.8483));
-    //    SeekerInfo seeker_data(0, -0.0549);
     ObjStatus missile_data(GPS(19.09816472762636, 106.0423359433193, 6.330028288997710), RotationAngle(-0.000064, 0.054904570813033, 1.277504088548353));
     ObjStatus target_data(GPS(19.11172390, 106.08994220, 6.0000), RotationAngle(0.0000, 0.0000, 2.8483));
     SeekerInfo seeker_data(0.0000, -0.054904570813033);
@@ -345,9 +339,7 @@ void Simulator::test()
 //    for(int offset = 0; offset < 1; offset++)
     {
         //            printf("Rendering image part %d\n", offset);
-//        std::cout << "Offset = " << offset << std::endl;
         getExeTime("calcDistance Time = ", calcDistance(offset, missile));
-//        mask(offset);
         getExeTime("calcRadiance Time = ", calcRadiance(offset));
         getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
     }
