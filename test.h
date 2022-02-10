@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "Simulator.h"
 void testReadFromFile();
-void testSimulator(int fps, int duration, int batch_size);
+void testSimulator(int fps, int duration, int batch_size, int resume);
 void testMul3x3();
 void printTestName(std::string name);
 void testConvertToImage();

@@ -281,6 +281,26 @@ __device__ double skyRadiance(double ifov, double sky_coeff, double path_coeff)
     return (sky_coeff / M_PI + path_coeff /M_PI);
 }
 
+//__device__ bool Simulator::isShipAppear()
+//{
+//    ObjStatus missile = m_missile[m_current_img_id];
+//    ObjStatus target = m_target[m_current_img_id];
+//    float2 target_imgPos = cudaImageModel(missile, target.gps, m_Rb2c_cur,
+//                                          m_Ri2b_missile_cur, m_Re2i_missile, m_fov_pixel);
+//    Coordinate target_pos = Geoditic2ECEF(target.gps);
+//    Coordinate missile_pos = Geoditic2ECEF(missile.gps);
+
+//    float distance = (target_pos - missile_pos).norm();
+
+//    float delta_az = asinf(target_imgPos.x / sqrtf(target_imgPos.x * target_imgPos.x + m_fov_pixel * m_fov_pixel));
+//    float delta_el = asinf(target_imgPos.y / Coordinate(target_imgPos.x, target_imgPos.y, m_fov_pixel).norm());
+//    //    float delta_u0 = atan(m_ship.length / distance) * f;
+//    //    float delta_w0 = atan(m_ship.height / distance) * f;
+
+//    return (std::fabs(delta_az) < deg2rad(m_fov / 2) + atan(15 / distance)) &&
+//            (std::fabs(delta_el) < deg2rad(3 / 4 * m_fov /2 ) + atan(6 / distance));
+//}
+
 __device__ bool isInsideSurface(double2* data, int length_data, double2 imgPos)
 {
     double sum = 0;
@@ -898,21 +918,12 @@ __global__ void cudaCalcRadiance(const double * __restrict__ distance,
             double path_ifov = path_coeff / M_PI;
 
             radiance[idx] = (object_ifov + solar_ifov + ocean_ifov + sky_ifov + path_ifov);
-//            printf("%f - %f - %f - %f - %f\n", solar_ifov, ocean_ifov, sky_ifov, object_ifov, path_ifov);
-//            printf("%f - %f - %f - %f - %f\n", solar_ifov, ocean_ifov, sky_ifov, object_ifov, path_ifov);
-
-//            printf("Object radiance - minDist - beta = %f - %f - %f - %f - %f - %f - %f - %f - %f\n",
-//                                                                        radiance[idx], ifov, minDist, angle[hitSurfaceIdx],
-//                                                                        solar_coeff, ocean_coeff,
-//                                                                        sky_coeff, object_coeff,
-//                                                                        path_coeff);
         }
         else
         {
             if(objIdx[idx] == 0)
             {
                 radiance[idx] = skyRadiance(ifov, sky_coeff, path_coeff);
-//                printf("Sky = %f\n", radiance[idx]);
             }
             else if(objIdx[idx] == 1)
             {
@@ -949,7 +960,6 @@ __global__ void cudaRenderPartialImg(unsigned char * renderedImg, double * radia
         int imgIdx = offset * batch_size + idx;
         double ifov_rad_sqr = powf(deg2rad(ifov), 2);
         renderedImg[imgIdx] = (unsigned char)(tmp / (PIXEL_GRID_SIZE * PIXEL_GRID_SIZE) * 0.5 * ifov_rad_sqr * powf(10, 8) * 255/ powf(fov, 2));
-//        printf("num = %f\n",  ifov_rad_sqr * powf(10, 8) * 255/ powf(fov, 2));
 
         if(renderedImg[imgIdx] > 255)
         {

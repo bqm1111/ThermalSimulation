@@ -1,13 +1,13 @@
 #include "test.h"
 
-void testSimulator(int fps, int duration, int batch_size)
+void testSimulator(int fps, int duration, int batch_size, int resume)
 {
     Simulator simulator(fps, duration, batch_size);
     simulator.init();
     simulator.loadData();
-//    simulator.run();
+    simulator.run(resume);
 //    simulator.testFunc();
-    simulator.test();
+//    simulator.test();
 //    simulator.testFuck();
 }
 

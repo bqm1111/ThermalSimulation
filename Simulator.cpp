@@ -162,7 +162,7 @@ void Simulator::calcSurfaceData()
     }
 }
 
-void Simulator::run()
+void Simulator::run(int resume)
 {
     ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
     SeekerInfo * seeker_cur, *seeker_prev;
@@ -173,7 +173,7 @@ void Simulator::run()
     gpuErrChk(cudaMalloc((void**)&seeker_cur, sizeof(SeekerInfo)));
     gpuErrChk(cudaMalloc((void**)&seeker_prev, sizeof(SeekerInfo)));
 
-    for(int m_current_img_id = 0; m_current_img_id < m_fps * m_duration; m_current_img_id++)
+    for(int m_current_img_id = resume; m_current_img_id < m_fps * m_duration; m_current_img_id++)
     {
         auto start = getMoment;
 

@@ -6,7 +6,7 @@
 #include "vector_types.h"
 #include "opencv2/opencv.hpp"
 
-#define PIXEL_GRID_SIZE     8
+#define PIXEL_GRID_SIZE     4
 
 class Simulator
 {
@@ -21,7 +21,7 @@ public:
     int m_current_img_id;       // id of current image being simulated
     void init();
     void loadData();
-    void run();
+    void run(int resume);
     void test();
     void testFunc();
     void testFuck();
