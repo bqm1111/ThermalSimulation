@@ -36,7 +36,7 @@
 
 #define TEST
 
-#define SHOWTIME
+//#define SHOWTIME
 #define threadsPerBlock 16
 #define IMUL(a, b) __mul24(a, b)
 #ifdef SHOWTIME
@@ -51,6 +51,7 @@
 #define getTimeElapsed(mess, end, start)    {}
 #define getExeTime(mess, ans)   {ans;}
 #define getKernelTime(mess, end, start) {}
+#define testCUDATime(mess, iteration, ans)  {}
 
 #endif
 #define gpuErrChk(ans) {gpuAssert((ans), __FILE__, __LINE__);}

@@ -13,7 +13,7 @@ enum DataType
 };
 
 struct GPS {
-    __device__ GPS(float lat = 0, float lon = 0, float h = 0)
+    __host__ __device__ GPS(double lat = 0, double lon = 0, double h = 0)
     {
         latitude = lat;
         longtitude = lon;
@@ -23,10 +23,14 @@ struct GPS {
     {
         printf("%s: %f - %f - %f\n", str, latitude, longtitude, height);
     }
+    __device__ double getHeight()
+    {
+        return height;
+    }
 
-    float latitude;
-    float longtitude;
-    float height;
+    double latitude;
+    double longtitude;
+    double height;
 };
 
 struct GPS3 {
@@ -35,16 +39,16 @@ struct GPS3 {
     GPS z;
 };
 
-struct float6
+struct double6
 {
-    float2 x;
-    float2 y;
-    float2 z;
+    double2 x;
+    double2 y;
+    double2 z;
 };
 
 struct RotationAngle
 {
-    __device__ RotationAngle(float r = 0, float p = 0, float y = 0)
+    __host__ __device__ RotationAngle(double r = 0, double p = 0, double y = 0)
     {
         roll = r;
         pitch = p;
@@ -55,22 +59,22 @@ struct RotationAngle
         printf("%s: %f - %f - %f\n", str, roll, pitch, yaw);
     }
 
-    float roll;
-    float pitch;
-    float yaw;
+    double roll;
+    double pitch;
+    double yaw;
 };
 
 struct Coordinate
 {
-    __device__ Coordinate(float x_ = 0, float y_ = 0, float z_= 0)
+    __host__ __device__ Coordinate(double x_ = 0, double y_ = 0, double z_= 0)
     {
         x = x_;
         y = y_;
         z = z_;
     }
-    __device__ float norm()
+    __device__ double norm()
     {
-        return sqrtf(x * x + y * y + z * z);
+        return sqrt(x * x + y * y + z * z);
     }
 
     __device__ Coordinate operator -(const Coordinate & coor)
@@ -83,17 +87,17 @@ struct Coordinate
         return Coordinate(x + coor.x, y + coor.y, z + coor.z);
     }
 
-    __device__ float operator *(const Coordinate & coor)
+    __device__ double operator *(const Coordinate & coor)
     {
         return (x * coor.x + y * coor.y + z * coor.z);
     }
 
-    __device__ Coordinate operator *(const float s)
+    __device__ Coordinate operator *(const double s)
     {
         return Coordinate(x * s, y * s, z * s);
     }
 
-    __device__ Coordinate operator /(const float s)
+    __device__ Coordinate operator /(const double s)
     {
         if(s==0)
         {
@@ -102,14 +106,14 @@ struct Coordinate
         return Coordinate(x/s, y/s, z/s);
     }
 
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
 };
 
 struct ObjStatus
 {
-    __device__ ObjStatus(GPS gps_, RotationAngle angle_)
+    __host__ __device__ ObjStatus(GPS gps_, RotationAngle angle_)
     {
         gps = gps_;
         angle = angle_;
@@ -121,20 +125,20 @@ struct ObjStatus
 
 struct RayInfo
 {
-    float *distance;
-    float *angle;
+    double *distance;
+    double *angle;
     int *objIdx;    // 0: sky  1: ocean 2: object
 };
 
 struct SeekerInfo
 {
-    __device__ SeekerInfo(float az, float ele)
+    __host__ __device__ SeekerInfo(double az, double ele)
     {
         azimuth = az;
         elevation = ele;
     }
-    float azimuth;
-    float elevation;
+    double azimuth;
+    double elevation;
 };
 
 struct ShipInfo
@@ -143,17 +147,17 @@ struct ShipInfo
     int num_surfaces;       // get from configuration of target model (predefined)
     int num_vertices;       // get from configuration of target model (predefined)
 
-    float3 *surfaces;       // num_surfaces * sizeof(float3) bytes allocated
+    double3 *surfaces;       // num_surfaces * sizeof(double3) bytes allocated
     // vertice coordinate with reference to the target
-    float3 *vertices;       // num_vertices * sizeof(float3) bytes allocated
+    double3 *vertices;       // num_vertices * sizeof(double3) bytes allocated
     // gps and imgPos is calculated in simulation time
     GPS *gps;               // gps data of each vertex
-    float2 *imgPos;          // pixel position of each vertex when projecting onto the image
+    double2 *imgPos;          // pixel position of each vertex when projecting onto the image
 
     GPS3 * surface_gps;
-    float6 * surface_imgPos;
+    double6 * surface_imgPos;
 
-    float length;      // length of the ship
-    float height;      // height of the ship
+    double length;      // length of the ship
+    double height;      // height of the ship
 };
 #endif

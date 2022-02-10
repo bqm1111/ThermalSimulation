@@ -34,8 +34,8 @@ Simulator::Simulator(int fps, int duration, int batch_size):
     {
         std::cout << "UNSUPPORTED DATA FOR "<< fps << " FPS" << std::endl;
     }
-    m_ship_surfaces_data_filename = "../data/Data_faces.txt";
-    m_ship_vertices_data_filename = "../data/Data_vertices.txt";
+    m_ship_surfaces_data_filename = "../test_data/ship_data_face.txt";
+    m_ship_vertices_data_filename = "../test_data/ship_data_vertices.txt";
 
     // ship parameter
     m_ship.num_surfaces = 4563;
@@ -48,27 +48,28 @@ void Simulator::loadData()
 {
     ObjStatus *missile_hData, *target_hData;
     SeekerInfo *seeker_hData;
-    float3 *ship_surfaces_hData, *ship_vertices_hData;
+    double3 *ship_surfaces_hData, *ship_vertices_hData;
 
     missile_hData = (ObjStatus*)malloc(m_totalFrame * sizeof(ObjStatus));
     target_hData = (ObjStatus*)malloc(m_totalFrame * sizeof(ObjStatus));
     seeker_hData = (SeekerInfo*)malloc(m_totalFrame * sizeof(SeekerInfo));
-    ship_surfaces_hData = (float3*)malloc(m_ship.num_surfaces * sizeof(float3));
-    ship_vertices_hData = (float3*)malloc(m_ship.num_vertices * sizeof(float3));
+    ship_surfaces_hData = (double3*)malloc(m_ship.num_surfaces * sizeof(double3));
+    ship_vertices_hData = (double3*)malloc(m_ship.num_vertices * sizeof(double3));
 
-    readFromFile(m_missile_data_filename, (float*)missile_hData, m_totalFrame, 6);
-    readFromFile(m_target_data_filename, (float*)target_hData, m_totalFrame, 6);
-    readFromFile(m_seeker_data_filename, (float*)seeker_hData, m_totalFrame, 2);
-    readFromFile(m_ship_surfaces_data_filename, (float*)ship_surfaces_hData, m_ship.num_surfaces, 3);
-    readFromFile(m_ship_vertices_data_filename, (float*)ship_vertices_hData, m_ship.num_vertices, 3);
+    readFromFile(m_missile_data_filename, (double*)missile_hData, m_totalFrame, 6);
+    readFromFile(m_target_data_filename, (double*)target_hData, m_totalFrame, 6);
+    readFromFile(m_seeker_data_filename, (double*)seeker_hData, m_totalFrame, 2);
+    readFromFile(m_ship_surfaces_data_filename, (double*)ship_surfaces_hData, m_ship.num_surfaces, 3);
+    readFromFile(m_ship_vertices_data_filename, (double*)ship_vertices_hData, m_ship.num_vertices, 3);
 
     gpuErrChk(cudaMemcpy(m_missile, missile_hData, m_totalFrame * sizeof(ObjStatus), cudaMemcpyHostToDevice));
     gpuErrChk(cudaMemcpy(m_target, target_hData, m_totalFrame * sizeof(ObjStatus), cudaMemcpyHostToDevice));
     gpuErrChk(cudaMemcpy(m_seeker, seeker_hData, m_totalFrame * sizeof(SeekerInfo), cudaMemcpyHostToDevice));
-    gpuErrChk(cudaMemcpy(m_ship.surfaces, ship_surfaces_hData, m_ship.num_surfaces * sizeof(float3), cudaMemcpyHostToDevice));
-    gpuErrChk(cudaMemcpy(m_ship.vertices, ship_vertices_hData, m_ship.num_vertices * sizeof(float3), cudaMemcpyHostToDevice));
+    gpuErrChk(cudaMemcpy(m_ship.surfaces, ship_surfaces_hData, m_ship.num_surfaces * sizeof(double3), cudaMemcpyHostToDevice));
+    gpuErrChk(cudaMemcpy(m_ship.vertices, ship_vertices_hData, m_ship.num_vertices * sizeof(double3), cudaMemcpyHostToDevice));
 
     std::cout << "Load source data: DONE !!!" << std::endl;
+
     free(missile_hData);
     free(target_hData);
     free(seeker_hData);
@@ -84,33 +85,32 @@ void Simulator::init()
     gpuErrChk(cudaMalloc((void**)&m_missile, m_totalFrame * sizeof(ObjStatus)));
     gpuErrChk(cudaMalloc((void**)&m_target, m_totalFrame * sizeof(ObjStatus)));
     gpuErrChk(cudaMalloc((void**)&m_seeker, m_totalFrame * sizeof(SeekerInfo)));
-    gpuErrChk(cudaMallocManaged((void**)&m_ship.surfaces, m_ship.num_surfaces * sizeof(float3)));
-    gpuErrChk(cudaMallocManaged((void**)&m_ship.vertices, m_ship.num_vertices *sizeof(float3)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.surfaces, m_ship.num_surfaces * sizeof(double3)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.vertices, m_ship.num_vertices *sizeof(double3)));
     gpuErrChk(cudaMallocManaged((void**)&m_ship.gps, m_ship.num_vertices *sizeof(GPS)));
-    gpuErrChk(cudaMallocManaged((void**)&m_ship.imgPos, m_ship.num_vertices *sizeof(float2)));
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.imgPos, m_ship.num_vertices *sizeof(double2)));
     gpuErrChk(cudaMallocManaged((void**)&m_ship.surface_gps, m_ship.num_surfaces * sizeof(GPS3)));
-    gpuErrChk(cudaMallocManaged((void**)&m_ship.surface_imgPos, m_ship.num_surfaces * sizeof(float6)));
-
+    gpuErrChk(cudaMallocManaged((void**)&m_ship.surface_imgPos, m_ship.num_surfaces * sizeof(double6)));
 
     // Allocate core data for rendering image
-//    gpuErrChk(cudaMalloc((void**)&m_ray, grid_size * sizeof(RayInfo)));
-    gpuErrChk(cudaMalloc((void**)&(m_ray.angle), grid_size * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&(m_ray.distance), grid_size * sizeof(float)));
+    //    gpuErrChk(cudaMalloc((void**)&m_ray, grid_size * sizeof(RayInfo)));
+    gpuErrChk(cudaMalloc((void**)&(m_ray.angle), grid_size * sizeof(double)));
+    gpuErrChk(cudaMalloc((void**)&(m_ray.distance), grid_size * sizeof(double)));
     gpuErrChk(cudaMalloc((void**)&(m_ray.objIdx), grid_size * sizeof(int)));
 
-
-
-    gpuErrChk(cudaMalloc((void**)&m_partialRadiance, m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE * sizeof(float)));
+    gpuErrChk(cudaMalloc((void**)&m_partialRadiance, m_batch_size * PIXEL_GRID_SIZE * PIXEL_GRID_SIZE * sizeof(double)));
     gpuErrChk(cudaMalloc((void**)&m_renderedImg, m_width * m_height * sizeof(unsigned char)));
+    gpuErrChk(cudaMalloc((void**)&m_maskImg, m_width * m_height * sizeof(unsigned char)));
 
+    gpuErrChk(cudaMemset(m_maskImg, 0, m_width * m_height * sizeof(unsigned char)));
     // Allocate memory for transformation matrices
-    gpuErrChk(cudaMalloc((void**)&m_Rb2c_cur, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Rb2c_prev, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Ri2b_missile_cur, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Ri2b_missile_prev, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Ri2b_target, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Re2i_missile, 9 * sizeof(float)));
-    gpuErrChk(cudaMalloc((void**)&m_Re2i_target, 9 * sizeof(float)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Rb2c_cur, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Rb2c_prev, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Ri2b_missile_cur, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Ri2b_missile_prev, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Ri2b_target, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Re2i_missile, 9 * sizeof(double)));
+    gpuErrChk(cudaMallocManaged((void**)&m_Re2i_target, 9 * sizeof(double)));
 }
 
 Simulator::~Simulator()
@@ -127,13 +127,14 @@ Simulator::~Simulator()
     gpuErrChk(cudaFree(m_ship.surface_imgPos));
 
     // Free core data for rendering image
-//    gpuErrChk(cudaFree(m_ray));
+    //    gpuErrChk(cudaFree(m_ray));
     gpuErrChk(cudaFree(m_ray.angle));
     gpuErrChk(cudaFree(m_ray.distance));
     gpuErrChk(cudaFree(m_ray.objIdx));
 
     gpuErrChk(cudaFree(m_partialRadiance));
     gpuErrChk(cudaFree(m_renderedImg));
+    gpuErrChk(cudaFree(m_maskImg));
 
     // Free memory for transformation matrices
     gpuErrChk(cudaFree(m_Rb2c_cur));
@@ -151,19 +152,20 @@ void Simulator::calcSurfaceData()
 {
     for(int i = 0; i < m_ship.num_surfaces; i++)
     {
-        m_ship.surface_gps[i].x = m_ship.gps[(int)(m_ship.surfaces->x)];
-        m_ship.surface_gps[i].y = m_ship.gps[(int)(m_ship.surfaces->y)];
-        m_ship.surface_gps[i].z = m_ship.gps[(int)(m_ship.surfaces->z)];
+        m_ship.surface_gps[i].x = m_ship.gps[(int)(m_ship.surfaces[i].x - 1)];
+        m_ship.surface_gps[i].y = m_ship.gps[(int)(m_ship.surfaces[i].y - 1)];
+        m_ship.surface_gps[i].z = m_ship.gps[(int)(m_ship.surfaces[i].z - 1)];
 
-        m_ship.surface_imgPos[i].x = m_ship.imgPos[(int)(m_ship.surfaces->x)];
-        m_ship.surface_imgPos[i].y = m_ship.imgPos[(int)(m_ship.surfaces->y)];
-        m_ship.surface_imgPos[i].z = m_ship.imgPos[(int)(m_ship.surfaces->z)];
+        m_ship.surface_imgPos[i].x = m_ship.imgPos[(int)(m_ship.surfaces[i].x - 1)];
+        m_ship.surface_imgPos[i].y = m_ship.imgPos[(int)(m_ship.surfaces[i].y - 1)];
+        m_ship.surface_imgPos[i].z = m_ship.imgPos[(int)(m_ship.surfaces[i].z - 1)];
     }
 }
 
 void Simulator::run()
 {
-    for(int m_current_img_id = 20; m_current_img_id < 21; m_current_img_id++)
+    auto start = getMoment;
+    for(int m_current_img_id = 0; m_current_img_id < m_fps * m_duration; m_current_img_id++)
     {
         ObjStatus * missile_cur, *target_cur, *missile_prev, *target_prev;
         SeekerInfo * seeker_cur, *seeker_prev;
@@ -200,20 +202,19 @@ void Simulator::run()
         calcSurfaceData();
         printf("Calculate SurfaceData: DONE!!!\n");
 
-//        for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
-        for(int offset = 0; offset < 1; offset++)
+        for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
         {
-            printf("Rendering image part %d\n", offset);
+            //            printf("Rendering image part %d\n", offset);
 
             getExeTime("calcDistance Time = ", calcDistance(offset, missile_cur));
             getExeTime("calcRadiance Time = ", calcRadiance(offset));
-//            getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
+            getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
         }
 
         cv::Mat img(m_height, m_width, CV_8UC1);
         gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
         cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + ".jpg", img);
-//        cv::waitKey(2);
+        //        cv::waitKey(2);
         gpuErrChk(cudaFree(missile_cur));
         gpuErrChk(cudaFree(target_cur));
         gpuErrChk(cudaFree(missile_prev));
@@ -221,4 +222,146 @@ void Simulator::run()
         gpuErrChk(cudaFree(seeker_cur));
         gpuErrChk(cudaFree(seeker_prev));
     }
+    auto end = getMoment;
+    getTimeElapsed("Time = ", end, start);
+}
+
+void Simulator::testCalcShipData(ObjStatus * missile, ObjStatus * target)
+{
+    GPS *ship_gps_gt;               // gps data of each vertex
+    double2 *ship_imgPos_gt;          // pixel position of each vertex when projecting onto the image
+
+    GPS3 * ship_surface_gps_gt;
+    double6 * ship_surface_imgPos_gt;
+    gpuErrChk(cudaMallocManaged((void**)&ship_gps_gt, m_ship.num_vertices *sizeof(GPS)));
+    gpuErrChk(cudaMallocManaged((void**)&ship_imgPos_gt, m_ship.num_vertices *sizeof(double2)));
+    gpuErrChk(cudaMallocManaged((void**)&ship_surface_gps_gt, m_ship.num_surfaces * sizeof(GPS3)));
+    gpuErrChk(cudaMallocManaged((void**)&ship_surface_imgPos_gt, m_ship.num_surfaces * sizeof(double6)));
+
+    readFromFile("../reference/ship_face_gps_pos.txt", (double*)ship_surface_gps_gt, m_ship.num_surfaces, 9);
+    readFromFile("../reference/ship_face_image_pos.txt", (double*)ship_surface_imgPos_gt, m_ship.num_surfaces, 6);
+
+    getExeTime("convert to image time = ", convertToImage(missile, target));
+
+    //    checkEqual("Test ship_GPS", (double*)ship_gps_gt, (double*)m_ship.gps, 3, m_ship.num_vertices, false);
+    //    checkEqual("Test ship_imgPos", (double*)ship_imgPos_gt, (double*)m_ship.imgPos, 2, m_ship.num_vertices, false);
+
+    printf("Convert To Image: DONE!!!\n");
+    getExeTime("calcSurfaceData = ", calcSurfaceData());
+
+    GPS3 * h_ship_face_gps = (GPS3*)malloc(m_ship.num_surfaces * sizeof(GPS3));
+    double6* h_ship_face_imgPos = (double6*)malloc(m_ship.num_surfaces * sizeof(double6));
+
+    gpuErrChk(cudaMemcpy(h_ship_face_gps, m_ship.surface_gps, m_ship.num_surfaces * sizeof(GPS3), cudaMemcpyDeviceToHost));
+    gpuErrChk(cudaMemcpy(h_ship_face_imgPos, m_ship.surface_imgPos, m_ship.num_surfaces * sizeof(double6), cudaMemcpyDeviceToHost));
+
+    writeTofile("../log/ship_face_gps.txt", (double*)h_ship_face_gps, m_ship.num_surfaces, 9);
+    writeTofile("../log/ship_face_imgPos.txt", (double*)h_ship_face_imgPos, m_ship.num_surfaces, 6);
+
+    free(h_ship_face_gps);
+    free(h_ship_face_imgPos);
+
+
+
+    checkEqual("Test ship_surface_GPS", (double*)ship_surface_gps_gt, (double*)m_ship.surface_gps, 9, m_ship.num_surfaces, false);
+    checkEqual("Test ship_surface_imgPos", (double*)ship_surface_imgPos_gt, (double*)m_ship.surface_imgPos, 6, m_ship.num_surfaces, false);
+
+    printf("Calculate SurfaceData: DONE!!!\n");
+
+    gpuErrChk(cudaFree(ship_gps_gt));
+    gpuErrChk(cudaFree(ship_imgPos_gt));
+    gpuErrChk(cudaFree(ship_surface_gps_gt));
+    gpuErrChk(cudaFree(ship_surface_imgPos_gt));
+}
+
+void Simulator::test()
+{
+    ObjStatus *missile;
+    ObjStatus *target;
+    SeekerInfo *seeker;
+
+    //    ObjStatus missile_data(GPS(19.0982, 106.0423, 6.33), RotationAngle(-0.000064, 0.0549, 1.2775));
+    //    ObjStatus target_data(GPS(19.1117, 106.0899, 6), RotationAngle(0, 0, 2.8483));
+    //    SeekerInfo seeker_data(0, -0.0549);
+    ObjStatus missile_data(GPS(19.09816472762636, 106.0423359433193, 6.330028288997710), RotationAngle(-0.000064, 0.054904570813033, 1.277504088548353));
+    ObjStatus target_data(GPS(19.11172390, 106.08994220, 6.0000), RotationAngle(0.0000, 0.0000, 2.8483));
+    SeekerInfo seeker_data(0.0000, -0.054904570813033);
+
+    gpuErrChk(cudaMalloc((void**)&missile, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&target, sizeof(ObjStatus)));
+    gpuErrChk(cudaMalloc((void**)&seeker, sizeof(SeekerInfo)));
+
+    gpuErrChk(cudaMemcpy(missile, &missile_data, sizeof(ObjStatus), cudaMemcpyHostToDevice));
+    gpuErrChk(cudaMemcpy(target, &target_data, sizeof(ObjStatus), cudaMemcpyHostToDevice));
+    gpuErrChk(cudaMemcpy(seeker, &seeker_data, sizeof(SeekerInfo), cudaMemcpyHostToDevice));
+
+    cv::Mat Rb2c_cur_gt = (cv::Mat_<double>(3, 3) << 0,	-0.0549,	0.9985,
+                           1,	0,	0,
+                           0,	0.9985,	0.0549);
+
+    cv::Mat Ri2b_missile_gt = (cv::Mat_<double>(3, 3) << 0.2887,	-0.9573,	0.0158,
+                               0.9559,	0.2891,	0.0526,
+                               -0.0549,	-6.39120480315225e-05,	0.9985);
+
+    cv::Mat Ri2b_target_gt = (cv::Mat_<double>(3, 3) << -0.9573,	-0.2891,	0,
+                              0.2891,	-0.9573,	0,
+                              0,	0,	1);
+
+
+    cv::Mat Re2i_missile_gt = (cv::Mat_<double>(3, 3) << 0.0904,	-0.3144,	0.9450,
+                               -0.9611,	-0.2763,	0,
+                               0.2611,	-0.9082,	-0.3272);
+    cv::Mat Re2i_target_gt = (cv::Mat_<double>(3, 3) << 0.0907,	-0.3146,	0.9449,
+                              -0.9608,	-0.2771,	0,
+                              0.2619,	-0.9079,	-0.3274);
+
+    printf("****** Start rendering image #%d ******\n", m_current_img_id + 1);
+    getExeTime("calcMatrix time = ", calcTranformationMatrices(missile, missile,target, target,
+                                                               seeker, seeker));
+
+    checkEqual("Test Rb2c", (double*)Rb2c_cur_gt.data, m_Rb2c_cur, 3, 3);
+    checkEqual("Test Ri2b_missile", (double*)Ri2b_missile_gt.data, m_Ri2b_missile_cur, 3, 3);
+    checkEqual("Test Ri2b_target", (double*)Ri2b_target_gt.data, m_Ri2b_target, 3, 3);
+    checkEqual("Test Re2i_missile", (double*)Re2i_missile_gt.data, m_Re2i_missile, 3, 3);
+    checkEqual("Test Re2i_target", (double*)Re2i_target_gt.data, m_Re2i_target, 3, 3);
+
+    printf("Calculate Transformation Matrices: DONE !!!\n");
+    convertToImage(missile, target);
+    GPS * h_ship_gps = (GPS*)malloc(m_ship.num_vertices * sizeof(GPS));
+    double2* h_ship_imgPos = (double2*)malloc(m_ship.num_vertices * sizeof(double2));
+
+    gpuErrChk(cudaMemcpy(h_ship_gps, m_ship.gps, m_ship.num_vertices * sizeof(GPS), cudaMemcpyDeviceToHost));
+    gpuErrChk(cudaMemcpy(h_ship_imgPos, m_ship.imgPos, m_ship.num_vertices * sizeof(double2), cudaMemcpyDeviceToHost));
+
+    writeTofile("../log/ship_gps.txt", (double*)h_ship_gps, m_ship.num_vertices, 3);
+    writeTofile("../log/ship_imgPos.txt", (double*)h_ship_imgPos, m_ship.num_vertices, 2);
+
+    free(h_ship_imgPos);
+    free(h_ship_gps);
+
+    testCalcShipData(missile, target);
+    auto start = getMoment;
+    for(int offset = 0; offset < m_width * m_height / m_batch_size; offset++)
+//    for(int offset = 0; offset < 1; offset++)
+    {
+        //            printf("Rendering image part %d\n", offset);
+//        std::cout << "Offset = " << offset << std::endl;
+        getExeTime("calcDistance Time = ", calcDistance(offset, missile));
+//        mask(offset);
+        getExeTime("calcRadiance Time = ", calcRadiance(offset));
+        getExeTime("calcRenderPartialImg Time = ", renderPartialImg(offset));
+    }
+
+    cv::Mat img(m_height, m_width, CV_8UC1);
+    gpuErrChk(cudaMemcpy(img.data, m_renderedImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+    cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + ".jpg", img);
+    auto end = getMoment;
+    getTimeElapsed("Total Time = ", end, start);
+    gpuErrChk(cudaMemcpy(img.data, m_maskImg, m_width * m_height * sizeof(unsigned char), cudaMemcpyDeviceToHost));
+    cv::imwrite("../img/" + std::string(std::to_string(m_current_img_id)) + "_mask.jpg", img);
+
+    //    cv::waitKey(2);
+    gpuErrChk(cudaFree(missile));
+    gpuErrChk(cudaFree(target));
+    gpuErrChk(cudaFree(seeker));
 }

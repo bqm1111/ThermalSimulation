@@ -51,10 +51,10 @@ void GenericData::create(size_t size, DataType dataType, AllocateType allocType)
             hData = (int*)malloc(size);
             break;
         case FLOAT:
-            hData = (float*)malloc(size);
+            hData = (double*)malloc(size);
             break;
         case FLOAT3:
-            hData = (float3*)malloc(size);
+            hData = (double3*)malloc(size);
             break;
         case DOUBLE:
             hData = (double*)malloc(size);
