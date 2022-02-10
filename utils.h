@@ -4,6 +4,7 @@
 #include "define.h"
 #include "Simulator.h"
 #include "math.h"
+#include <fstream>
 
 //extern __device__ void getRi2bMatrix(double* matrix, RotationAngle angle);
 //extern __device__ void getRb2cMatrix(double* matrix, RotationAngle angle);
