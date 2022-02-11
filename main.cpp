@@ -15,6 +15,8 @@ int main(int argc, char **argv)
     std::cout << "duration: " << duration << "(s)" << std::endl;
     std::cout << "resume: " << resume << std::endl;
     std::cout << "cuda_device: " << cuda_device << std::endl;
+    std::cout << "=====================================" << std::endl;
+
     for(int i = 0; i < argc; i++)
     {
         if(strcmp(argv[i], "--batch_size") == 0)

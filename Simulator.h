@@ -23,8 +23,6 @@ public:
     void loadData();
     void run(int resume);
     void test();
-    void testFunc();
-    void testFuck();
 
 private:
     int m_fps;
@@ -38,7 +36,7 @@ private:
     void calcDistance(int offset, ObjStatus * missile_cur);
     void calcRadiance(int offset);
     void renderPartialImg(int offset);
-    bool isShipAppear();
+    bool isShipAppear(ObjStatus * missile, ObjStatus * target);
     void renderSingleImg();
     void testCalcShipData(ObjStatus * missile, ObjStatus * target);
     void testStruct();
