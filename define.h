@@ -36,7 +36,7 @@
 
 #define TEST
 
-#define SHOWTIME
+//#define SHOWTIME
 #define threadsPerBlock 16
 #define IMUL(a, b) __mul24(a, b)
 #ifdef SHOWTIME
